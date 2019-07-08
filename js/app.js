@@ -1,7 +1,7 @@
 let alias = require("./alias.js");
 
 function process(path) {
-    let fh = new alias.file.SynchronousURLFile(path);
+    let fh = new alias.file.UrlReaderSync(path);
     let archive = new alias.rs.TarGzArchive(fh);
 
     // declare first watchers
@@ -38,5 +38,8 @@ function process(path) {
     }
 }
 
-process('http://localhost:8080/dump-my_activity.tgz');
+//process('http://localhost:8080/dump-my_activity.tgz');
 //process('http://localhost:8080/dump-10G-photos.tgz');
+
+let fh = new alias.file.UrlWriterSync("http://localhost:8081/files/foo");
+alias.rs.debug(fh);

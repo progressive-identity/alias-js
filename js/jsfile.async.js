@@ -1,4 +1,5 @@
 const syncRequest = require('sync-request');
+const fetch = require('node-fetch');
 
 /** JSFile is an interface for any file-like object managed JS-side. Rust makes
  * JSFile objects have the std::io::Read trait.
@@ -16,6 +17,11 @@ class JsFile {
 
     // only cache data
     write(buf) {
+        throw "not implemented";
+    }
+
+    // returns promise
+    flush() {
         throw "not implemented";
     }
 };
@@ -77,12 +83,18 @@ class UrlReaderSync extends JsFile {
     }
 }
 
-class UrlWriterSync extends JsFile {
+class UrlWriter extends JsFile {
     constructor(url) {
         super();
         this.url = url;
         this._created = false;
         this._offset = 0;
+        this._buf = null;
+    }
+
+    create() {
+        // XXX
+        this._created = true;
     }
 
     write(buf) {
@@ -90,30 +102,39 @@ class UrlWriterSync extends JsFile {
             return;
         }
 
-        if (!this._created) {
-            // XXX
-            this._created = true;
+        this._buf = buf;
+    }
+
+    flush() {
+        var p = Promise.resolve();
+
+        if (this._buf == null) {
+            return p;
         }
 
-        let length = buf.length;
+        if (!this._created) {
+            p = p.then(this.create());
+        }
+
+        let length = this._buf.length;
         let start = this._offset;
         let end = this._offset + length - 1;
         let self = this;
 
-        // NodeJS only accepts Buffer
-        buf = Buffer.from(buf);
-
-        syncRequest('PUT', this.url, {
+        return p.then(() => fetch(this.url, {
+            method: 'PUT',
             headers: {
                 'Range': '' + start + '-' + end,
             },
-            body: buf,
+            body: this._buf,
+        })).then(function(resp) {
+            self._offset += length;
+            self._buf = null;
+            return resp;
         });
-
-        self._offset += length;
     }
 }
 
 module.exports.JsFile = JsFile;
 module.exports.UrlReaderSync = UrlReaderSync;
-module.exports.UrlWriterSync = UrlWriterSync;
+module.exports.UrlWriter = UrlWriter;

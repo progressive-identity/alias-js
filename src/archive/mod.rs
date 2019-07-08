@@ -1,5 +1,5 @@
 pub mod js_watcher;
-pub mod tar;
+pub mod tar_iterator;
 pub mod watcher;
 
 pub use js_watcher::JsWatchers;
@@ -7,6 +7,7 @@ use std::borrow::Cow;
 use std::io::Read;
 use std::path::Path;
 use std::*;
+pub use tar_iterator::TarIterator;
 pub use watcher::Watchers;
 
 pub trait ArchiveIterator: Read {

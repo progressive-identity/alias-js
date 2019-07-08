@@ -7,7 +7,7 @@ mod wasm;
 use crate::archive::watcher;
 use crate::utils::io_error_to_js_error;
 use log::*;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::*;
 use wasm_bindgen::prelude::*;
 
@@ -44,7 +44,7 @@ impl Entry {
 #[wasm_bindgen]
 struct TarGzArchive {
     js_file: Option<jsfile::JsFile>,
-    inner: Option<archive::tar::TarIterator<flate2::read::GzDecoder<io::BufReader<jsfile::File>>>>,
+    inner: Option<archive::TarIterator<flate2::read::GzDecoder<io::BufReader<jsfile::File>>>>,
     watchers: watcher::Watchers,
 }
 
@@ -68,7 +68,7 @@ impl TarGzArchive {
         let file = jsfile::File::new(js_file);
         let file = io::BufReader::with_capacity(16 * 1024 * 1024, file);
         let file = flate2::read::GzDecoder::new(file);
-        let inner = archive::tar::TarIterator::new(file);
+        let inner = archive::TarIterator::new(file);
         self.inner = Some(inner);
     }
 
@@ -107,18 +107,13 @@ impl TarGzArchive {
     }
 }
 
-/*#[wasm_bindgen]
-pub fn debug(jsfile: jsfile::JsFile, cb: js_sys::Function) -> Result<(), JsValue> {
-    /*
-    while file.next().unwrap().is_some() {
-        let entry = Entry {
-            path: file.path().unwrap().to_str().unwrap().to_string(),
-            read: &mut file,
-        };
-        let null = JsValue::null();
-        let closure = Closure::once(move || entry);
-        cb.call1(&null, closure.as_ref())?;
-    }*/
+#[wasm_bindgen]
+pub fn debug(jsfile: jsfile::JsFile) -> Result<(), JsValue> {
+    let file = jsfile::File::new(jsfile);
+    let file = io::BufWriter::with_capacity(16 * 1024 * 1024, file);
+    let mut file = flate2::write::GzEncoder::new(file, flate2::Compression::best());
+    let buf: [u8; 4] = [65, 65, 65, 65];
+    file.write(&buf).unwrap();
+
     Ok(())
 }
-*/

@@ -13,6 +13,9 @@ extern "C" {
 
     #[wasm_bindgen(method)]
     pub fn size(this: &JsFile) -> JsValue;
+
+    #[wasm_bindgen(method, catch)]
+    pub fn write(this: &JsFile, buf: Box<[u8]>) -> Result<(), JsValue>;
 }
 
 pub struct File {
@@ -70,6 +73,26 @@ impl std::io::Read for File {
             .expect("u64 overflow");
 
         Ok(buf_len)
+    }
+}
+
+impl std::io::Write for File {
+    fn write(&mut self, in_buf: &[u8]) -> std::io::Result<usize> {
+        let mut buf = Vec::with_capacity(in_buf.len());
+        buf.extend_from_slice(in_buf);
+        let buf = buf.into_boxed_slice();
+
+        match self.inner.write(buf) {
+            Ok(()) => Ok(in_buf.len()),
+            Err(_) => Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "js writer failed",
+            )),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }
 
