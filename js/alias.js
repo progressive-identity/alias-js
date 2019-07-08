@@ -1,20 +1,5 @@
 let alias_rs = require("./alias_rs.js")
 
-class ArchiveEntry {
-    constructor(path, readCb) {
-        this._path = path;
-        this._readCb = readCb;
-    }
-
-    path() {
-        return this._path;
-    }
-
-    read(l) {
-        return this._readCb(l);
-    }
-};
-
 // see https://github.com/rustwasm/wasm-bindgen/issues/1642
 class _WatchersWrapper {
     constructor(wrappers) {
@@ -27,8 +12,10 @@ class _WatchersWrapper {
 }
 
 global.Alias = {};
-global.Alias.ArchiveEntry = ArchiveEntry;
 global.Alias.WatchersWrapper = _WatchersWrapper;
 
 module.exports.rs = alias_rs;
+module.exports.Watchers = alias_rs.JsWatchers;
+module.exports.file = require("./jsfile.js")
+module.exports.WatchersWrapper = _WatchersWrapper;
 

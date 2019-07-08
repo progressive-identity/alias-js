@@ -13,15 +13,6 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_name = ArchiveEntry, js_namespace = Alias)]
-    pub type JsArchiveEntry;
-
-    #[wasm_bindgen(constructor)]
-    pub fn new(found: bool, path: String, read_cb: js_sys::Function) -> JsArchiveEntry;
-}
-
-#[wasm_bindgen]
 pub struct JsWatchers {
     opens: HashMap<String, js_sys::Function>,
 }
