@@ -1,16 +1,4 @@
 
-// see https://github.com/rustwasm/wasm-bindgen/issues/1642
-class _WatchersWrapper {
-    constructor(wrappers) {
-        this.wrappers = wrappers;
-    }
-
-    into_inner() {
-        return this.wrappers;
-    }
-}
-
-global.WatchersWrapper = _WatchersWrapper;
 
 let alias = require("./alias.js");
 
@@ -23,15 +11,20 @@ let archive = new alias.rs.TarGzArchive(myDump);
 
 let w = new alias.rs.JsWatchers();
 w.open("Takeout/My Activity/Assistant/MyActivity.json", function(path, reader) {
+    if (!reader) {
+        console.error("myactivity.json not found");
+        return;
+    }
+
     let buf = new Uint8Array(8);
     reader.read(buf);
     console.log("myactivity.json found", path, reader, buf);
     reader.drop();
 
 
-    let w = new alias.rs.JsWatchers();
-    w.open("pouet", function(path, readCb) { console.log("pouet"); });
-    return new WatchersWrapper(w);
+    /*let w = new alias.rs.JsWatchers();
+    w.open("pouet", function(path, reader) { console.log("pouet", path, reader); });
+    return new Alias.WatchersWrapper(w);*/
 });
 
 archive.watch(w);

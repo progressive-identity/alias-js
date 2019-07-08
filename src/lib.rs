@@ -16,14 +16,6 @@ pub fn start() {
     wasm::init();
 }
 
-#[wasm_bindgen]
-extern "C" {
-    pub type ArchiveEntry;
-
-    #[wasm_bindgen(constructor)]
-    pub fn new(path: String, read_cb: js_sys::Function) -> ArchiveEntry;
-}
-
 pub struct Debug {}
 #[wasm_bindgen]
 impl Debug {
@@ -85,7 +77,7 @@ impl TarGzArchive {
         self.inner = Some(inner);
     }
 
-    pub fn watch(&mut self, w: watcher::JsWatchers) {
+    pub fn watch(&mut self, w: archive::JsWatchers) {
         self.watchers.append(watcher::Watchers::from(w));
     }
 

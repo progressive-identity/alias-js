@@ -26,7 +26,7 @@ where
             // If no more entries, rewind
             if self.inner.next()?.is_none() {
                 // Clear all old watchers
-                watchers.next_pass();
+                watchers.next_pass()?;
 
                 return Ok(false);
             }
@@ -37,8 +37,7 @@ where
             if let Some(open) = watchers.opens.remove(&path) {
                 did_work = true;
 
-                if let Some(new_w) = (open.cb)(path.as_path().to_string_lossy().to_string(), self)?
-                {
+                if let Some(new_w) = (open.cb)(path.as_path(), Some(self))? {
                     watchers.append(new_w);
                 }
             }
