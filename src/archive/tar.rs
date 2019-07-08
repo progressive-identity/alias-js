@@ -297,4 +297,7 @@ where
     fn path(&self) -> io::Result<Cow<Path>> {
         self.path()
     }
+    fn as_read_mut(&mut self) -> &mut Read {
+        self
+    }
 }

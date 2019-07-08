@@ -44,11 +44,7 @@ impl Entry {
 #[wasm_bindgen]
 struct TarGzArchive {
     js_file: Option<jsfile::JsFile>,
-    inner: Option<
-        archive::ArchiveFromIterator<
-            archive::tar::TarIterator<flate2::read::GzDecoder<io::BufReader<jsfile::File>>>,
-        >,
-    >,
+    inner: Option<archive::tar::TarIterator<flate2::read::GzDecoder<io::BufReader<jsfile::File>>>>,
     watchers: watcher::Watchers,
 }
 
@@ -72,8 +68,7 @@ impl TarGzArchive {
         let file = jsfile::File::new(js_file);
         let file = io::BufReader::with_capacity(16 * 1024 * 1024, file);
         let file = flate2::read::GzDecoder::new(file);
-        let file = archive::tar::TarIterator::new(file);
-        let inner = archive::ArchiveFromIterator::new(file);
+        let inner = archive::tar::TarIterator::new(file);
         self.inner = Some(inner);
     }
 
@@ -82,8 +77,10 @@ impl TarGzArchive {
     }
 
     pub fn step(&mut self) -> Result<bool, JsValue> {
+        use archive::ArchiveIterator;
         loop {
-            let r = self.inner.as_mut().unwrap().step(&mut self.watchers);
+            let archive_iter_mut: &mut ArchiveIterator = self.inner.as_mut().unwrap();
+            let r = archive_iter_mut.step(&mut self.watchers);
             let r = io_error_to_js_error(r)?;
 
             // if data were processing, returns as so
@@ -100,7 +97,6 @@ impl TarGzArchive {
                 .inner
                 .take()
                 .unwrap()
-                .into_inner()
                 .into_inner()
                 .into_inner()
                 .into_inner()
