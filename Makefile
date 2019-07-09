@@ -1,4 +1,4 @@
-.PHONY: all build build-nodejs build-web clean serve-client run npm-install
+.PHONY: all build build-nodejs build-web clean serve-client run npm-install clean-files
 
 NAME=alias_rs
 
@@ -52,3 +52,6 @@ clean:
 
 serve-client:
 	FLASK_APP=scripts/server.py FLASK_DEBUG=y flask run -p 8081
+
+clean-files:
+	rm -rf files/*

@@ -35,11 +35,7 @@ impl TarGzArchiveWriter {
 
     pub fn finish(self) -> Result<(), JsValue> {
         io_error_to_js_error((move || {
-            self.inner
-                .into_inner()?
-                .finish()?
-                .into_inner()?
-                .into_inner();
+            self.inner.into_inner()?.finish()?.into_inner()?.finish();
             Ok(())
         })())
     }

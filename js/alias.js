@@ -1,4 +1,4 @@
-let alias_rs = require("./alias_rs.js")
+const alias_rs = require("./alias_rs.js")
 
 // see https://github.com/rustwasm/wasm-bindgen/issues/1642
 class _WatchersWrapper {

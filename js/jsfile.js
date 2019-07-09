@@ -1,3 +1,4 @@
+const to_utf8 = require('./alias_rs.js').to_utf8;
 const syncRequest = require('sync-request');
 
 /** JSFile is an interface for any file-like object managed JS-side. Rust makes
@@ -17,6 +18,15 @@ class JsFile {
     // only cache data
     write(buf) {
         throw "not implemented";
+    }
+
+    // synchronous! called when file write is finished
+    finish() {
+        throw "not implemented";
+    }
+
+    write_string(s) {
+        this.write(to_utf8(s));
     }
 };
 
@@ -111,6 +121,15 @@ class UrlWriterSync extends JsFile {
         });
 
         self._offset += length;
+    }
+
+    finish() {
+        syncRequest('POST', this.url, {
+            headers: {
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({"action": "finish"}),
+        });
     }
 }
 

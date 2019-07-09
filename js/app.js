@@ -4,7 +4,7 @@ function process(path) {
     let in_fh = new alias.file.UrlReaderSync(path);
     let in_archive = new alias.rs.TarGzArchiveReader(in_fh);
 
-    let out_fh = new alias.file.UrlWriterSync("http://localhost:8081/files/foo");
+    let out_fh = new alias.file.UrlWriterSync("http://localhost:8081/files/foo.tar.gz");
     let out_archive = new alias.rs.TarGzArchiveWriter(out_fh);
 
     // declare first watchers
@@ -43,8 +43,12 @@ function process(path) {
     }
 
     out_archive.finish();
+
 }
 
 process('http://localhost:8080/dump-my_activity.tgz');
 //process('http://localhost:8080/dump-10G-photos.tgz');
 
+let fh = new alias.file.UrlWriterSync("http://localhost:8081/files/bar");
+fh.write_string("hello!💩");
+fh.finish();

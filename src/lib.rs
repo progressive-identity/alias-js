@@ -4,13 +4,17 @@ mod jsreader;
 mod utils;
 mod wasm;
 
-use crate::utils::io_error_to_js_error;
 use std::*;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
 pub fn start() {
     wasm::init();
+}
+
+#[wasm_bindgen]
+pub fn to_utf8(s: String) -> Vec<u8> {
+    s.into_bytes()
 }
 
 /*#[wasm_bindgen]

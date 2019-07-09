@@ -63,7 +63,7 @@ impl TarGzArchiveReader {
                 .into_inner()
                 .into_inner()
                 .into_inner()
-                .into_inner();
+                .finish();
             self.js_file = Some(js_file);
             self.init_inner();
         }

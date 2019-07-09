@@ -16,11 +16,22 @@ extern "C" {
 
     #[wasm_bindgen(method, catch)]
     pub fn write(this: &JsFile, buf: Box<[u8]>) -> Result<(), JsValue>;
+
+    #[wasm_bindgen(method)]
+    pub fn finish(this: &JsFile);
+}
+
+pub enum FileMode {
+    Unknown,
+    Read,
+    Write,
+    Finished,
 }
 
 pub struct File {
     inner: JsFile,
     offset: u64,
+    mode: FileMode,
 }
 
 impl File {
@@ -28,11 +39,8 @@ impl File {
         File {
             inner: jsfile,
             offset: 0,
+            mode: FileMode::Unknown,
         }
-    }
-
-    pub fn into_inner(self) -> JsFile {
-        self.inner
     }
 
     pub fn size(&self) -> io::Result<u64> {
@@ -41,19 +49,27 @@ impl File {
             Some(size_f64) => Ok(size_f64.approx().expect("file's size is not castable")),
         }
     }
-    /*
-    pub fn stream_position(&self) -> std::io::Result<u64> {
-        Ok(self.offset)
-    }
 
-    pub fn stream_len(&self) -> std::io::Result<u64> {
-        self.size()
+    pub fn finish(mut self) -> JsFile {
+        if let FileMode::Read = self.mode {
+            return self.inner;
+        }
+
+        self.inner.finish();
+        self.mode = FileMode::Finished;
+        self.inner
     }
-    */
 }
 
 impl std::io::Read for File {
     fn read(&mut self, out_buf: &mut [u8]) -> std::io::Result<usize> {
+        match self.mode {
+            FileMode::Unknown => self.mode = FileMode::Read,
+            FileMode::Read => (),
+            FileMode::Write => panic!("file in write mode"),
+            FileMode::Finished => panic!("file is commit"),
+        };
+
         let start = f64::value_from(self.offset).expect("cannot cast start offset to f64");
         let end = f64::value_from(self.offset + out_buf.len() as u64)
             .expect("cannot cast end offset to f64");
@@ -78,6 +94,12 @@ impl std::io::Read for File {
 
 impl std::io::Write for File {
     fn write(&mut self, in_buf: &[u8]) -> std::io::Result<usize> {
+        match self.mode {
+            FileMode::Unknown => self.mode = FileMode::Write,
+            FileMode::Read => panic!("file in read mode"),
+            FileMode::Write => (),
+            FileMode::Finished => panic!("file is commit"),
+        };
         let mut buf = Vec::with_capacity(in_buf.len());
         buf.extend_from_slice(in_buf);
         let buf = buf.into_boxed_slice();
