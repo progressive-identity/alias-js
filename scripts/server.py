@@ -39,12 +39,8 @@ def file_put(path):
         fh.seek(start, os.SEEK_SET)
         fh.write(body)
 
-        fh.seek(start, os.SEEK_SET)
-        assert fh.read(len(body)) == body
-
     print(f"write {path} {len(body)}B from {start}")
 
-    #print(body[:256])
     return ""
 
 
