@@ -40,16 +40,18 @@ impl From<JsWatchers> for Watchers {
         for (path, cb) in js_watchers.opens {
             watchers.open(
                 path,
-                Box::new(move |path, reader| {
-                    let reader = match reader {
-                        Some(r) => unsafe { jsreader::new(r) }.into(),
-                        None => JsValue::NULL,
+                Box::new(move |mut entry| {
+                    let reader = if entry.is_found() {
+                        let r = entry.reader.as_mut().unwrap();
+                        unsafe { jsreader::new(r.read, r.size) }.into()
+                    } else {
+                        JsValue::NULL
                     };
 
                     let ret = cb
                         .call2(
                             &JsValue::NULL,
-                            &JsValue::from_str(&path.to_string_lossy()),
+                            &JsValue::from_str(&entry.path.to_string_lossy()),
                             &reader,
                         )
                         .expect("open callback failed");

@@ -1,10 +1,10 @@
+use crate::archive::ArchiveEntry;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io;
-use std::io::Read;
 use std::path::*;
 
-type WatcherOpenCallback = FnOnce(&Path, Option<&mut Read>) -> io::Result<Option<Watchers>>;
+type WatcherOpenCallback = FnOnce(ArchiveEntry) -> io::Result<Option<Watchers>>;
 
 pub struct WatcherOpen {
     pub cb: Box<WatcherOpenCallback>,
@@ -42,7 +42,7 @@ impl Watchers {
                 w.pass -= 1;
                 opens.insert(p, w);
             } else {
-                (w.cb)(&p, None)?;
+                (w.cb)(ArchiveEntry::not_found(&p))?;
             }
         }
         self.opens = opens;

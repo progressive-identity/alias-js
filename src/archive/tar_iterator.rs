@@ -300,4 +300,7 @@ where
     fn as_read_mut(&mut self) -> &mut Read {
         self
     }
+    fn size(&self) -> io::Result<u64> {
+        self.header.as_ref().unwrap().size()
+    }
 }

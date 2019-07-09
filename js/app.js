@@ -1,8 +1,11 @@
 let alias = require("./alias.js");
 
 function process(path) {
-    let fh = new alias.file.UrlReaderSync(path);
-    let archive = new alias.rs.TarGzArchive(fh);
+    let in_fh = new alias.file.UrlReaderSync(path);
+    let in_archive = new alias.rs.TarGzArchiveReader(in_fh);
+
+    let out_fh = new alias.file.UrlWriterSync("http://localhost:8081/files/foo");
+    let out_archive = new alias.rs.TarGzArchiveWriter(out_fh);
 
     // declare first watchers
     let w = new alias.Watchers();
@@ -19,27 +22,29 @@ function process(path) {
             i.audioFiles.forEach(function(af) {
                 let path = "Takeout/My Activity/Assistant/" + af;
                 w.open(path, function(path, reader) {
-                    console.log(path, reader);
-                    if (reader) reader.drop();
+                    console.log(path);
+                    if (reader) {
+                        out_archive.add_entry_with_reader(path, reader);
+                    }
                 });
             });
         });
 
         return new Alias.WatchersWrapper(w);
     });
-    archive.watch(w);
+    in_archive.watch(w);
 
     // process
     for (;;) {
-        let r = archive.step();
+        let r = in_archive.step();
         if (!r) {
             break;
         }
     }
+
+    out_archive.finish();
 }
 
-//process('http://localhost:8080/dump-my_activity.tgz');
+process('http://localhost:8080/dump-my_activity.tgz');
 //process('http://localhost:8080/dump-10G-photos.tgz');
 
-let fh = new alias.file.UrlWriterSync("http://localhost:8081/files/foo");
-alias.rs.debug(fh);

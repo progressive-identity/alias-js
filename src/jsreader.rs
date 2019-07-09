@@ -1,19 +1,24 @@
 use crate::utils::io_error_to_js_error;
 use js_sys::JSON;
+use std::io;
 use std::io::Read;
 use std::str;
 use wasm_bindgen::prelude::*;
 
-pub unsafe fn new(r: &mut Read) -> JsReader {
+pub unsafe fn new(r: &mut Read, size: u64) -> JsReader {
     let static_r: &'static mut Read = std::mem::transmute(r);
     let ptr: *mut Read = static_r;
 
-    JsReader { ptr: Some(ptr) }
+    JsReader {
+        ptr: Some(ptr),
+        size: size,
+    }
 }
 
 #[wasm_bindgen]
 pub struct JsReader {
     ptr: Option<*mut Read>,
+    size: u64,
 }
 
 #[wasm_bindgen]
@@ -62,6 +67,19 @@ impl JsReader {
 
     pub fn drop(self) {
         drop(self)
+    }
+
+    pub fn size(&self) -> u64 {
+        self.size
+    }
+}
+
+impl Read for JsReader {
+    fn read(&mut self, out_buf: &mut [u8]) -> io::Result<usize> {
+        match self.as_mut_read() {
+            Ok(r) => r.read(out_buf),
+            Err(_) => Err(io::Error::new(io::ErrorKind::Other, "dangling jsreader")),
+        }
     }
 }
 
