@@ -2,6 +2,7 @@
     "name": "alias",
     "main": "app.js",
     "dependencies": {
+        "googleapis": "^39.2.0",
         "sync-request": "^6.1.0",
         "tiny-worker": "^2.2.0"
     }

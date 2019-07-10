@@ -57,4 +57,5 @@ serve-client:
 	FLASK_APP=scripts/server.py FLASK_DEBUG=y flask run -p 8081
 
 clean-files:
-	rm -rf files/*
+	rm -rf data/*
+	mkdir -p data/files

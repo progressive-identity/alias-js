@@ -1,10 +1,12 @@
-let alias = require("./alias.js");
+const alias = require("./alias.js");
+const {google} = require('googleapis');
+const gdrive = require('./gdrive.js');
 
-function process(path) {
-    let in_fh = new alias.file.UrlReaderSync(path);
+function process(in_fh) {
+    //let in_fh = new alias.file.UrlReaderSync(path);
     let in_archive = new alias.rs.TarGzArchiveReader(in_fh);
 
-    let out_fh = new alias.file.UrlWriterSync("http://localhost:8081/files/foo.tar.gz");
+    let out_fh = new alias.file.UrlWriterSync("http://localhost:8081/files/pouet/dump1.tgz");
     let out_archive = new alias.rs.TarGzArchiveWriter(out_fh);
 
     // declare first watchers
@@ -22,7 +24,7 @@ function process(path) {
             i.audioFiles.forEach(function(af) {
                 let path = "Takeout/My Activity/Assistant/" + af;
                 w.open(path, function(path, reader) {
-                    //console.log(path);
+                    console.log(path);
                     if (reader) {
                         out_archive.add_entry_with_reader(path, reader);
                     }
@@ -45,7 +47,76 @@ function process(path) {
     return out_archive.finish();
 }
 
-let h = process('http://localhost:8080/dump-my_activity.tgz');
+
+async function explore_gdrive() {
+    const auth = await gdrive.getHandler();
+    const access_token = auth.credentials.access_token;
+
+    const drive = google.drive({version: 'v3', auth});
+
+    console.log("listing...");
+    const files = await list(drive, {pageSize: 1});
+    const file = files[0]
+
+
+    let url = "https://www.googleapis.com/drive/v3/files/" + file.id;
+
+    url = url + "?alt=media"
+
+    const syncRequest = require('sync-request');
+    const res = syncRequest('GET', url, {
+        headers: {
+            'Authorization': 'Bearer ' + access_token,
+            'Range': 'bytes=0-16',
+        }
+    });
+
+    let body = new Uint8Array(res.body);
+    //let str = alias.rs.from_utf8(body);
+    //console.log(str);
+
+    return body;
+
+    //console.log("downloading...");
+    //const data = await download(drive, file.id);
+    //console.log("downloaded");
+    //return data;
+}
+
+async function main() {
+    let in_fh = null;
+    if (false) {
+        const auth = await require('./gdrive.js').getHandler()
+        const drive = google.drive({version: 'v3', auth});
+
+        const files = await gdrive.list(drive, {pageSize: 1});
+        const fileId = files[0].id
+
+        in_fh = gdrive.newSyncReader(auth, fileId);
+    } else {
+        in_fh = new alias.file.UrlReaderSync('http://localhost:8080/dump-my_activity.tgz');
+    }
+
+    const res = process(in_fh);
+
+    console.log("file uploaded Blake2b: ", res.to_hex());
+
+    return null;
+}
+
+main().then((v) => {
+    console.log("exit: ", v);
+}).catch(console.error);
+
+/*
+fs.readFile('credentials.json', (err, content) => {
+  if (err) return console.log('Error loading client secret file:', err);
+  // Authorize a client with credentials, then call the Google Drive API.
+  authorize(JSON.parse(content), listFiles);
+});
+*/
+
+//let h = process('http://localhost:8080/dump-my_activity.tgz');
 
 function generate_token(to_json, files) {
     if (to_json) {
@@ -64,7 +135,7 @@ function generate_token(to_json, files) {
     };
 }
 
-let files = [h];
+/*let files = [h];
 let token = generate_token(true, files);
 token['_hash'] = alias.rs.hash(generate_token(false, files)).to_hex();
 
@@ -73,3 +144,5 @@ token['_hash'] = alias.rs.hash(generate_token(false, files)).to_hex();
 let fh = new alias.file.UrlWriterSync("http://localhost:8081/files/bar");
 fh.write_string(JSON.stringify(token));
 fh.finish();
+*/
+

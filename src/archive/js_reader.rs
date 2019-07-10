@@ -29,7 +29,7 @@ impl TarGzArchiveReader {
     fn init_inner(&mut self) {
         let js_file = self.js_file.take().unwrap();
         let file = File::new(js_file);
-        let file = io::BufReader::with_capacity(16 * 1024 * 1024, file);
+        let file = io::BufReader::with_capacity(64 * 1024 * 1024, file);
         let file = flate2::read::GzDecoder::new(file);
         let inner = TarIterator::new(file);
         self.inner = Some(inner);

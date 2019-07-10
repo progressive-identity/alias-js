@@ -3,7 +3,7 @@ import os
 
 app = flask.Flask(__name__)
 
-FILE_PATH = 'files/'
+FILE_PATH = 'data/files/'
 
 
 def check_path(path):
@@ -21,6 +21,13 @@ def get_tmp_path(path):
     return os.path.join(dirpath, basename)
 
 
+def make_dir(path):
+    try:
+        os.makedirs(os.path.dirname(path))
+    except:
+        pass
+
+
 @app.route("/files/<path:path>", methods=['PUT'])
 def file_put(path):
     path = check_path(path)
@@ -35,6 +42,7 @@ def file_put(path):
         print(f"first data of {path}")
         os.unlink(tmp_path)
 
+    make_dir(tmp_path)
     with open(tmp_path, "a+b") as fh:
         fh.seek(start, os.SEEK_SET)
         fh.write(body)
@@ -52,6 +60,7 @@ def file_post(path):
     # commit file?
     if args['action'] == 'finish':
         tmp_path = get_tmp_path(path)
+        make_dir(path)
         os.rename(tmp_path, path)
         print(f"commit {path}")
         ret = {"status": "ok"}

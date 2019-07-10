@@ -38,10 +38,11 @@ class JsFile {
  * only performed in a Web Worker
  */
 class UrlReaderSync extends JsFile {
-    constructor(url) {
+    constructor(url, args) {
         super();
         this.url = url;
-        this._cachedSize = null;
+        this.args = args || {};
+        this._cachedSize = this.args.size || null;
     }
 
     read(start, end) {
@@ -51,17 +52,24 @@ class UrlReaderSync extends JsFile {
 
         console.debug('fetch ' + this.url + ': ' + (start/1024/1024) + '-' + (end/1024/1024) + 'MB');
 
+        const headers = {...(this.args.headers || {}), ...{
+            'Range': 'bytes=' + start + '-' + (end-1),
+        }};
+
         let res = syncRequest('GET', this.url, {
-            headers: {
-                'range': '' + start + '-' + (end-1),
-            }
+            headers: headers,
         });
+
+        let body = res.body;
+
+        /*const alias_rs = require('./alias_rs.js');
+        let str = alias_rs.from_utf8(body);
+        console.log(str);*/
 
         if (res.statusCode != 206) {
             return null;
         }
 
-        let body = res.body;
         let buf8 = new Uint8Array(body);
         return buf8;
     }
