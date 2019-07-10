@@ -22,7 +22,7 @@ function process(path) {
             i.audioFiles.forEach(function(af) {
                 let path = "Takeout/My Activity/Assistant/" + af;
                 w.open(path, function(path, reader) {
-                    console.log(path);
+                    //console.log(path);
                     if (reader) {
                         out_archive.add_entry_with_reader(path, reader);
                     }
@@ -42,13 +42,34 @@ function process(path) {
         }
     }
 
-    out_archive.finish();
-
+    return out_archive.finish();
 }
 
-process('http://localhost:8080/dump-my_activity.tgz');
+let h = process('http://localhost:8080/dump-my_activity.tgz');
+
+function generate_token(to_json, files) {
+    if (to_json) {
+        files = files.map((h) => h.to_hex());
+    } else {
+        files = files.map((h) => new alias.HashWrapper(h));
+    }
+    return {
+        "type": "grant",
+        "client": "pouet",
+        "scopes": [
+            "google.photos.*",
+            "google.foo.*",
+        ],
+        "files": files,
+    };
+}
+
+let files = [h];
+let token = generate_token(true, files);
+token['_hash'] = alias.rs.hash(generate_token(false, files)).to_hex();
+
 //process('http://localhost:8080/dump-10G-photos.tgz');
 
 let fh = new alias.file.UrlWriterSync("http://localhost:8081/files/bar");
-fh.write_string("hello!💩");
+fh.write_string(JSON.stringify(token));
 fh.finish();

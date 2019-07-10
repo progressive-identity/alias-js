@@ -1,4 +1,4 @@
-.PHONY: all build build-nodejs build-web clean serve-client run npm-install clean-files
+.PHONY: all build check build-nodejs build-web clean serve-client run npm-install clean-files
 
 NAME=alias_rs
 
@@ -32,6 +32,9 @@ build-web: $(WASM_PATH)
 
 $(WASM_PATH): $(RUST_SRC)
 	cargo build $(CARGO_FLAGS)
+
+check:
+	cargo check $(CARGO_FLAGS)
 
 dist/www:
 	cargo build $(CARGO_FLAGS)
