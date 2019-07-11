@@ -98,6 +98,17 @@ async function list(drive, caller_args) {
     return res.data.files;
 };
 
+function getDownloadRequest(auth, fileId) {
+    return {
+        url: "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media",
+        args: {
+            headers: {
+                'Authorization': 'Bearer ' + auth.credentials.access_token,
+            }
+        },
+    }
+}
+/*
 function newSyncReader(auth, fileId) {
     const url = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
     const headers = {
@@ -108,8 +119,8 @@ function newSyncReader(auth, fileId) {
     });
 
     return handler;
-}
+}*/
 
 module.exports.getHandler = getHandler;
 module.exports.list = list;
-module.exports.newSyncReader = newSyncReader;
+module.exports.getDownloadRequest = getDownloadRequest;

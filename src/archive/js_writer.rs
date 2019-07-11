@@ -6,6 +6,8 @@ use crate::anychain;
 use crate::jsfile;
 use crate::jsreader;
 
+const FILE_MODE: u32 = 384; // 0600 in octal
+
 #[wasm_bindgen]
 struct TarGzArchiveWriter {
     inner:
@@ -31,6 +33,7 @@ impl TarGzArchiveWriter {
         js_reader: jsreader::JsReader,
     ) -> Result<(), JsValue> {
         let mut header = tar::Header::new_gnu();
+        header.set_mode(FILE_MODE);
         header.set_size(js_reader.size());
         io_error_to_js_error(self.inner.append_data(&mut header, path, js_reader))?;
         Ok(())
@@ -38,11 +41,13 @@ impl TarGzArchiveWriter {
 
     pub fn add_entry_with_string(&mut self, path: String, value: String) -> Result<(), JsValue> {
         let mut header = tar::Header::new_gnu();
+        header.set_mode(FILE_MODE);
         let buf = value.as_bytes();
         header.set_size(buf.len() as u64);
         io_error_to_js_error(self.inner.append_data(&mut header, path, buf))?;
         Ok(())
     }
+
     pub fn finish(self) -> Result<anychain::Hash, JsValue> {
         io_error_to_js_error((move || {
             let (file, hash) = self.inner.into_inner()?.finish()?.into_inner()?.finish();

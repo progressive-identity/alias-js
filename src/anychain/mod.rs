@@ -1,6 +1,7 @@
 // XXX implement with blake2b::many::*;
 
 mod js;
+mod sign;
 pub mod traits;
 mod writer;
 
@@ -149,9 +150,4 @@ where
     v.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
     hash_sorted_map(v.iter().map(|(k, v)| (*k, *v)))
-}
-
-#[test]
-fn test() {
-    println!("{}", hash(&1.0));
 }

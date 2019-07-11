@@ -20,10 +20,11 @@ tar = "0.4.26"
 zip = { version = "0.5.2", default-features = false, features = ["deflate", "time"] }   # bzip2 not compilable with WASM
 #serde = { version = "1.0.94", features = [ "derive" ] }
 #serde_derive = "1.0.94"
-
+#ed25519 = { package = "ed25519-dalek", version = "0.9.1" }
 # anychain
 blake2b = { package = "blake2b_simd", version = "0.5.3" }
 lazy_static = "1.3.0"
+rand = "0.7.0"
 
 # WebAssembly dependencies
 console_error_panic_hook = { version = "0.1.1", optional = true }

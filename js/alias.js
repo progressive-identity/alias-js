@@ -28,5 +28,7 @@ global.Alias.HashWrapper = _HashWrapper;
 module.exports.rs = alias_rs;
 module.exports.Watchers = alias_rs.JsWatchers;
 module.exports.file = require("./jsfile.js")
+module.exports.Processor = require("./processor.js").Processor;
 module.exports.WatchersWrapper = _WatchersWrapper;
+module.exports.Scope = require("./scope.js").Scope;
 module.exports.HashWrapper = _HashWrapper;

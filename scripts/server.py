@@ -24,7 +24,7 @@ def get_tmp_path(path):
 def make_dir(path):
     try:
         os.makedirs(os.path.dirname(path))
-    except:
+    except Exception:
         pass
 
 

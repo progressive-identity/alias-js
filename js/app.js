@@ -2,89 +2,8 @@ const alias = require("./alias.js");
 const {google} = require('googleapis');
 const gdrive = require('./gdrive.js');
 
-function process(in_fh) {
-    //let in_fh = new alias.file.UrlReaderSync(path);
-    let in_archive = new alias.rs.TarGzArchiveReader(in_fh);
-
-    let out_fh = new alias.file.UrlWriterSync("http://localhost:8081/files/pouet/dump1.tgz");
-    let out_archive = new alias.rs.TarGzArchiveWriter(out_fh);
-
-    // declare first watchers
-    let w = new alias.Watchers();
-    w.open("Takeout/My Activity/Assistant/MyActivity.json", function(path, reader) {
-        if (!reader) {
-            console.error("myactivity.json not found");
-            return;
-        }
-
-        let content = reader.json();
-
-        let w = new alias.Watchers();
-        content.filter(i => "audioFiles" in i).forEach(function(i) {
-            i.audioFiles.forEach(function(af) {
-                let path = "Takeout/My Activity/Assistant/" + af;
-                w.open(path, function(path, reader) {
-                    console.log(path);
-                    if (reader) {
-                        out_archive.add_entry_with_reader(path, reader);
-                    }
-                });
-            });
-        });
-
-        return new Alias.WatchersWrapper(w);
-    });
-    in_archive.watch(w);
-
-    // process
-    for (;;) {
-        let r = in_archive.step();
-        if (!r) {
-            break;
-        }
-    }
-
-    return out_archive.finish();
-}
-
-
-async function explore_gdrive() {
-    const auth = await gdrive.getHandler();
-    const access_token = auth.credentials.access_token;
-
-    const drive = google.drive({version: 'v3', auth});
-
-    console.log("listing...");
-    const files = await list(drive, {pageSize: 1});
-    const file = files[0]
-
-
-    let url = "https://www.googleapis.com/drive/v3/files/" + file.id;
-
-    url = url + "?alt=media"
-
-    const syncRequest = require('sync-request');
-    const res = syncRequest('GET', url, {
-        headers: {
-            'Authorization': 'Bearer ' + access_token,
-            'Range': 'bytes=0-16',
-        }
-    });
-
-    let body = new Uint8Array(res.body);
-    //let str = alias.rs.from_utf8(body);
-    //console.log(str);
-
-    return body;
-
-    //console.log("downloading...");
-    //const data = await download(drive, file.id);
-    //console.log("downloaded");
-    //return data;
-}
-
 async function main() {
-    let in_fh = null;
+    let inp = null;
     if (false) {
         const auth = await require('./gdrive.js').getHandler()
         const drive = google.drive({version: 'v3', auth});
@@ -92,14 +11,29 @@ async function main() {
         const files = await gdrive.list(drive, {pageSize: 1});
         const fileId = files[0].id
 
-        in_fh = gdrive.newSyncReader(auth, fileId);
+        inp = gdrive.getDownloadRequest(auth, fileId);
     } else {
-        in_fh = new alias.file.UrlReaderSync('http://localhost:8080/dump-my_activity.tgz');
+        inp = {url: 'http://localhost:8080/dump-my_activity.tgz'};
     }
 
-    const res = process(in_fh);
+    const scopes = [
+        new alias.Scope("google", "myactivity.assistant", null, null),
+        new alias.Scope("google", "myactivity.search", null, null),
+    ];
 
-    console.log("file uploaded Blake2b: ", res.to_hex());
+    const proc = new alias.Processor({
+        client_url: "http://localhost:8081/files/debug",
+        inp: [inp],
+        scopes: scopes,
+    });
+
+    await proc.init();
+    await proc.run();
+    proc.terminate();
+
+
+
+    //console.log("file uploaded Blake2b: ", res);
 
     return null;
 }
@@ -107,16 +41,6 @@ async function main() {
 main().then((v) => {
     console.log("exit: ", v);
 }).catch(console.error);
-
-/*
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Drive API.
-  authorize(JSON.parse(content), listFiles);
-});
-*/
-
-//let h = process('http://localhost:8080/dump-my_activity.tgz');
 
 function generate_token(to_json, files) {
     if (to_json) {
