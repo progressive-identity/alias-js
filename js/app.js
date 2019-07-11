@@ -4,20 +4,20 @@ const gdrive = require('./gdrive.js');
 
 async function main() {
     let inp = null;
-    if (false) {
+    if (true) {
         const auth = await require('./gdrive.js').getHandler()
         const drive = google.drive({version: 'v3', auth});
 
         const files = await gdrive.list(drive, {pageSize: 1});
-        const fileId = files[0].id
+        const file = files[0];
 
-        inp = gdrive.getDownloadRequest(auth, fileId);
+        inp = gdrive.getDownloadRequest(auth, file.id, file.size);
     } else {
         inp = {url: 'http://localhost:8080/dump-my_activity.tgz'};
     }
 
     const scopes = [
-        new alias.Scope("google", "myactivity.assistant", null, null),
+        new alias.Scope("google", "myactivity.assistant", null, ["audioFiles", "time", "title"]),
         new alias.Scope("google", "myactivity.search", null, null),
     ];
 
@@ -25,17 +25,14 @@ async function main() {
         client_url: "http://localhost:8081/files/debug",
         inp: [inp],
         scopes: scopes,
+        onprogress: console.log,
     });
 
     await proc.init();
     const res = await proc.run();
     proc.terminate();
 
-    console.log(res);
-
-    //console.log("file uploaded Blake2b: ", res);
-
-    return null;
+    return res;
 }
 
 main().then((v) => {

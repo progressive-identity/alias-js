@@ -129,8 +129,12 @@ class Handlers {
             throw "not initialized";
         }
 
-        const should_continue = this.inps[0].step();
-        if (!should_continue) {
+        const should_continue = this.inps[0].step(16);
+
+
+        if (should_continue) {
+            this._notify_progress(this.inps[0].progress());
+        } else {
             for (const path in this.outs) {
                 const out = this.outs[path];
                 let h;
@@ -144,9 +148,20 @@ class Handlers {
 
                 this.outs[path] = h;
             }
+
+            this._notify_progress(1.0);
         }
 
         return should_continue;
+    }
+
+    _notify_progress(progress) {
+        postMessage({
+            method: 'progress',
+            data: {
+                progress: progress,
+            }
+        });
     }
 }
 

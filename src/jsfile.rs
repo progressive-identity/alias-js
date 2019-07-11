@@ -1,5 +1,6 @@
 use conv::*;
 use js_sys::Uint8Array;
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
@@ -61,7 +62,7 @@ impl File {
     }
 }
 
-impl std::io::Read for File {
+impl Read for File {
     fn read(&mut self, out_buf: &mut [u8]) -> std::io::Result<usize> {
         match self.mode {
             FileMode::Unknown => self.mode = FileMode::Read,
@@ -92,7 +93,7 @@ impl std::io::Read for File {
     }
 }
 
-impl std::io::Write for File {
+impl Write for File {
     fn write(&mut self, in_buf: &[u8]) -> std::io::Result<usize> {
         match self.mode {
             FileMode::Unknown => self.mode = FileMode::Write,
@@ -126,12 +127,12 @@ fn add_u64_to_i64(a: u64, b: i64) -> Option<u64> {
     }
 }
 
-impl std::io::Seek for File {
-    fn seek(&mut self, pos: std::io::SeekFrom) -> std::io::Result<u64> {
+impl Seek for File {
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         let new_offset = match pos {
-            std::io::SeekFrom::Start(start_pos) => Some(start_pos),
-            std::io::SeekFrom::End(end_pos) => add_u64_to_i64(self.size()?, end_pos),
-            std::io::SeekFrom::Current(rel_pos) => add_u64_to_i64(self.offset, rel_pos),
+            SeekFrom::Start(start_pos) => Some(start_pos),
+            SeekFrom::End(end_pos) => add_u64_to_i64(self.size()?, end_pos),
+            SeekFrom::Current(rel_pos) => add_u64_to_i64(self.offset, rel_pos),
         };
 
         match new_offset {

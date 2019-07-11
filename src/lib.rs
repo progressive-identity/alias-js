@@ -2,6 +2,7 @@ mod anychain;
 mod archive;
 mod jsfile;
 mod jsreader;
+mod probe_reader;
 mod raw_writer;
 mod utils;
 mod wasm;
@@ -24,7 +25,7 @@ pub fn from_utf8(b: Box<[u8]>) -> String {
     String::from_utf8_lossy(&b).to_string()
 }
 
-#[wasm_bindgen]
+/*#[wasm_bindgen]
 pub fn debug(v: JsValue) -> anychain::Hash {
     anychain::hash(&(0 as u64)).into_value()
-}
+}*/

@@ -15,7 +15,7 @@ pub trait ArchiveIterator: Read {
 }
 
 impl ArchiveIterator {
-    pub fn step(&mut self, watchers: &mut Watchers) -> io::Result<bool> {
+    pub fn step(&mut self, watchers: &mut Watchers, max_iter: Option<usize>) -> io::Result<bool> {
         // Continue only if more works has to be done
         if !watchers.is_active() {
             return Ok(false);
@@ -23,7 +23,16 @@ impl ArchiveIterator {
 
         // Iterate over entries
         let mut did_work = false;
+        let mut count = 0;
         while !did_work {
+            if let Some(max) = max_iter {
+                if count >= max {
+                    return Ok(true);
+                }
+            }
+
+            count += 1;
+
             // If no more entries, rewind
             if self.next()?.is_none() {
                 // Clear all old watchers

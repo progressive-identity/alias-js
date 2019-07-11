@@ -98,13 +98,14 @@ async function list(drive, caller_args) {
     return res.data.files;
 };
 
-function getDownloadRequest(auth, fileId) {
+function getDownloadRequest(auth, fileId, size) {
     return {
         url: "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media",
         args: {
             headers: {
                 'Authorization': 'Bearer ' + auth.credentials.access_token,
-            }
+            },
+            size: parseInt(size),
         },
     }
 }

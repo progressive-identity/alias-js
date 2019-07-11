@@ -5,7 +5,6 @@ path["myactivity.assistant"] = function(scope) {
         const archive_path = "google_myactivity_assistant";
 
         const on_audio_files = function(path, reader) {
-            //console.log(path);
             if (reader) {
                 p.out_archive("google_myactivity_assistant").add_entry_with_reader(path, reader);
             }
@@ -17,18 +16,31 @@ path["myactivity.assistant"] = function(scope) {
                 return;
             }
 
-            let content = reader.json();
-
-            p.out_archive("google_myactivity_assistant").add_entry_with_string(path, JSON.stringify(content));
-            p.out_file("pouet.json").write_string(JSON.stringify(content));
+            // XXX streaming json
+            let index = reader.json();
+            let new_index = [];
 
             let w = new alias.Watchers();
-            content.filter(i => "audioFiles" in i).forEach(function(i) {
-                i.audioFiles.forEach(function(af) {
-                    let path = "Takeout/My Activity/Assistant/" + af;
-                    w.open(path, on_audio_files);
-                });
-            });
+            for (const i in index) {
+                const e = index[i];
+
+                if (!scope.match(e)) {
+                    continue;
+                }
+
+                if (scope.hasField('audioFiles') && 'audioFiles' in e) {
+                    // extract audio files linked to recordings
+                    e.audioFiles.forEach(function(af) {
+                        let path = "Takeout/My Activity/Assistant/" + af;
+                        w.open(path, on_audio_files);
+                    });
+                }
+
+                // emit indexes
+                new_index.push(scope.filterFields(e));
+            }
+
+            p.out_archive("google_myactivity_assistant").add_entry_with_string(path, JSON.stringify(new_index));
             return new Alias.WatchersWrapper(w);
         };
 

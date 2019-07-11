@@ -21,5 +21,5 @@ pub fn init() {
     set_panic_hook();
     console_log::init_with_level(Level::Debug).unwrap();
 
-    debug!("alias-rs init OK");
+    //debug!("alias-rs init OK");
 }

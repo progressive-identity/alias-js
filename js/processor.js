@@ -38,14 +38,32 @@ class Processor {
 
     _onmessage(ev) {
         const data = ev.data;
-        const [resolve, reject] = this._rpc_promises[data.id];
-        delete this._rpc_promises[data.id];
 
-        if ("error" in data) {
-            return reject(data.error);
+        if ('id' in data) {
+            const [resolve, reject] = this._rpc_promises[data.id];
+            delete this._rpc_promises[data.id];
+
+            if ("error" in data) {
+                return reject(data.error);
+            }
+
+            resolve(data.data);
+        } else if ('method' in data) {
+            const method = data.method;
+            const args = data.data;
+
+            if (method == 'progress') {
+                if (this._args.onprogress !== undefined) {
+                    this._args.onprogress(args);
+                }
+
+            } else {
+                throw 'unknown received method from worker: ' + method;
+            }
+
+        } else {
+            throw 'unknown received payload from worker';
         }
-
-        resolve(data.data);
     }
 
     ping(args) {
