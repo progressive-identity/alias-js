@@ -11,7 +11,8 @@ class ProcessorApi {
     out_file(path) {
         if (!(path in this._outs)) {
             const url = this._client_url + "/" + path;
-            const fh = new alias.file.UrlWriterSync(url);
+            let fh = new alias.file.UrlWriterSync(url);
+            fh = new alias.rs.RawWriter(fh);
             this._outs[path] = {mode: 'file', fh: fh};
         }
 
@@ -111,6 +112,16 @@ class Handlers {
     run() {
         // process
         while (this.step());
+
+        let outs = {};
+        for (let path in this.outs) {
+            let h = this.outs[path];
+            outs[path] = h.as_hex();
+        }
+
+        return {
+            outs: outs,
+        }
     }
 
     step() {
@@ -122,15 +133,16 @@ class Handlers {
         if (!should_continue) {
             for (const path in this.outs) {
                 const out = this.outs[path];
+                let h;
                 if (out.mode == 'file') {
-                    out.fh.finish();
+                    h = out.fh.finish();
                 } else if (out.mode == 'archive') {
-                    out.archive.finish();
+                    h = out.archive.finish();
                 } else {
                     throw "unknown output mode";
                 }
 
-                //this.outs[path] = out.finalize();
+                this.outs[path] = h;
             }
         }
 

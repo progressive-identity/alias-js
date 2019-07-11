@@ -28,7 +28,7 @@ pub struct Hash(blake2b::Hash);
 
 #[wasm_bindgen]
 impl Hash {
-    pub fn to_hex(&self) -> String {
+    pub fn as_hex(&self) -> String {
         self.0.to_hex().as_str().to_string()
     }
 }

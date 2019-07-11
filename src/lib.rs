@@ -2,6 +2,7 @@ mod anychain;
 mod archive;
 mod jsfile;
 mod jsreader;
+mod raw_writer;
 mod utils;
 mod wasm;
 

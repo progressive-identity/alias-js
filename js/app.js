@@ -28,10 +28,10 @@ async function main() {
     });
 
     await proc.init();
-    await proc.run();
+    const res = await proc.run();
     proc.terminate();
 
-
+    console.log(res);
 
     //console.log("file uploaded Blake2b: ", res);
 

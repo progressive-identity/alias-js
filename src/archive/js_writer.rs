@@ -5,22 +5,20 @@ use wasm_bindgen::prelude::*;
 use crate::anychain;
 use crate::jsfile;
 use crate::jsreader;
+use crate::raw_writer::RawWriter;
 
 const FILE_MODE: u32 = 384; // 0600 in octal
 
 #[wasm_bindgen]
 struct TarGzArchiveWriter {
-    inner:
-        tar::Builder<flate2::write::GzEncoder<io::BufWriter<anychain::Blake2bWrite<jsfile::File>>>>,
+    inner: tar::Builder<flate2::write::GzEncoder<RawWriter>>,
 }
 
 #[wasm_bindgen]
 impl TarGzArchiveWriter {
     #[wasm_bindgen(constructor)]
     pub fn new(js_file: jsfile::JsFile) -> TarGzArchiveWriter {
-        let file = jsfile::File::new(js_file);
-        let file = anychain::Blake2bWrite::new(file);
-        let file = io::BufWriter::with_capacity(8 * 1024 * 1024, file);
+        let file = RawWriter::new(js_file);
         let file = flate2::write::GzEncoder::new(file, flate2::Compression::fast());
         let inner = tar::Builder::new(file);
 
@@ -49,10 +47,8 @@ impl TarGzArchiveWriter {
     }
 
     pub fn finish(self) -> Result<anychain::Hash, JsValue> {
-        io_error_to_js_error((move || {
-            let (file, hash) = self.inner.into_inner()?.finish()?.into_inner()?.finish();
-            file.finish();
-            Ok(hash)
-        })())
+        let r = io_error_to_js_error((move || Ok(self.inner.into_inner()?.finish()?))())?;
+
+        Ok(r.finish()?)
     }
 }
