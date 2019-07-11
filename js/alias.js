@@ -1,5 +1,20 @@
 const alias_rs = require("./alias_rs.js")
 
+if (!('toJSON' in Error.prototype))
+Object.defineProperty(Error.prototype, 'toJSON', {
+    value: function () {
+        var alt = {};
+
+        Object.getOwnPropertyNames(this).forEach(function (key) {
+            alt[key] = this[key];
+        }, this);
+
+        return alt;
+    },
+    configurable: true,
+    writable: true
+});
+
 // see https://github.com/rustwasm/wasm-bindgen/issues/1642
 class _WatchersWrapper {
     constructor(wrappers) {

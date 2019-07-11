@@ -184,10 +184,10 @@ onmessage = function (ev) {
             data: res,
         });
     } catch(e) {
-        console.error("worker exception:", e);
+        console.error("worker exception:", e, e.message);
         postMessage({
             id: data.id,
-            error: e.message
+            error: e
         });
     }
 }

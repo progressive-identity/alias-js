@@ -28,8 +28,13 @@ class Server {
     }
 
     _ontext(conn, d) {
+        conn.sendJson = function(obj) { conn.sendText(JSON.stringify(obj)); };
+
         this._handle(conn, d)
-            .catch(() => console.error())
+            .catch((er) => {
+                console.error("error", er);
+                conn.sendJson({error: er});
+            })
             .finally(() => {
                 console.log("exit");
                 conn.close();
@@ -38,10 +43,6 @@ class Server {
     }
 
     async _handle(conn, d) {
-        let send = function(obj) {
-            conn.sendText(JSON.stringify(obj));
-        };
-
         try {
             var d = JSON.parse(d);
         } catch(e) {
@@ -57,7 +58,7 @@ class Server {
                 client_url: d.client_url,
                 inp: d.inp,
                 scopes: scopes,
-                onprogress: send,
+                onprogress: conn.sendJson,
             };
 
         } catch(e) {
@@ -71,7 +72,7 @@ class Server {
 
         conn.processor = new alias.Processor(args);
         conn.startDate = new Date();
-        send({"init": true});
+        conn.sendJson({"init": true});
         await conn.processor.init()
         const res = await conn.processor.run();
 
@@ -82,7 +83,9 @@ class Server {
         const duration = (endDate - conn.startDate) / 1000.0;
         console.log("Processing finished in " + duration + "s!");
 
-        send(res);
+        if (res) {
+            conn.sendJson(res);
+        }
     }
 
     _describe(args) {
