@@ -10,7 +10,7 @@ use crate::raw_writer::RawWriter;
 const FILE_MODE: u32 = 384; // 0600 in octal
 
 #[wasm_bindgen]
-struct TarGzArchiveWriter {
+pub struct TarGzArchiveWriter {
     inner: tar::Builder<flate2::write::GzEncoder<RawWriter>>,
 }
 

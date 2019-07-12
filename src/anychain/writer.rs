@@ -16,7 +16,7 @@ impl<W: Write> Blake2bWrite<W> {
     }
 
     pub fn finish(self) -> (W, Hash) {
-        (self.write, Hash(self.state.finalize()))
+        (self.write, Hash::from(self.state.finalize()))
     }
 }
 

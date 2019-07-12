@@ -5,6 +5,7 @@ mod sign;
 pub mod traits;
 mod writer;
 
+use base64;
 use blake2b;
 use std::*;
 pub use traits::*;
@@ -23,19 +24,73 @@ pub const HEADER_LIST: &[u8] = b"list";
 pub const HEADER_MAP: &[u8] = b"map";
 
 #[wasm_bindgen]
-#[derive(Clone)]
-pub struct Hash(blake2b::Hash);
+pub struct Hash([u8; blake2b::OUTBYTES]);
 
 #[wasm_bindgen]
 impl Hash {
-    pub fn as_hex(&self) -> String {
-        self.0.to_hex().as_str().to_string()
+    pub fn as_base64(&self) -> String {
+        base64::encode_config(&self.0[..], base64::STANDARD_NO_PAD)
     }
+
+    pub fn from_base64(s: String) -> Result<Hash, JsValue> {
+        let v = match base64::decode_config(&s, base64::STANDARD_NO_PAD) {
+            Err(_) => {
+                return Err(JsValue::from_str("invalid base64"));
+            }
+            Ok(v) => {
+                if v.len() != 64 {
+                    return Err(JsValue::from_str("bad hash length"));
+                }
+
+                v
+            }
+        };
+
+        if v.len() != 64 {
+            return Err(JsValue::from_str("bad hash length"));
+        }
+
+        let mut h = Hash([0; blake2b::OUTBYTES]);
+        h.0.copy_from_slice(&v);
+        Ok(h)
+    }
+
+    pub fn clone(&self) -> Self {
+        let mut h = Hash([0; blake2b::OUTBYTES]);
+        h.0.copy_from_slice(&self.0);
+        h
+    }
+
+    /*
+    pub fn from_bytes(v: Box<[u8]>) -> Result<Hash, JsValue> {
+        if v.len() != 64 {
+            return Err(JsValue::from_str("bad hash length"));
+        }
+
+        let mut h = Hash([0; blake2b::OUTBYTES]);
+        h.0.copy_from_slice(&v);
+        Ok(h)
+    }
+    */
 }
 
 impl std::fmt::Display for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.to_hex())
+        write!(f, "{}", self.as_base64())
+    }
+}
+
+impl AsRef<[u8]> for Hash {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl From<blake2b::Hash> for Hash {
+    fn from(v: blake2b::Hash) -> Self {
+        let mut h = Hash([0; blake2b::OUTBYTES]);
+        h.0.copy_from_slice(&v.as_bytes());
+        h
     }
 }
 
@@ -45,7 +100,7 @@ pub enum LazyHash {
 
 impl LazyHash {
     pub fn from_blake2b(v: blake2b::Hash) -> Self {
-        LazyHash::Value(Hash(v))
+        LazyHash::Value(Hash::from(v))
     }
 
     pub fn from_hash(h: &Hash) -> Self {
@@ -97,7 +152,7 @@ impl HashableList {
 
     pub fn push<T: Hashable>(&mut self, v: &T) {
         let h = v.hash().into_value();
-        self.state.update(h.0.as_bytes());
+        self.state.update(h.as_ref());
     }
 }
 
@@ -137,8 +192,8 @@ where
     }
 
     let mut state = new_state_raw(HEADER_MAP);
-    state.update(hl_k.hash().into_value().0.as_bytes());
-    state.update(hl_v.hash().into_value().0.as_bytes());
+    state.update(hl_k.hash().into_value().as_ref());
+    state.update(hl_v.hash().into_value().as_ref());
     LazyHash::from_blake2b(state.finalize())
 }
 

@@ -1,4 +1,5 @@
 const alias_rs = require("./alias_rs.js")
+const _sodium = require('libsodium-wrappers');
 
 if (!('toJSON' in Error.prototype))
 Object.defineProperty(Error.prototype, 'toJSON', {
@@ -31,18 +32,27 @@ class _HashWrapper {
         this.h = h;
     }
 
-    into_inner() {
-        return this.h;
+    as_hash() {
+        // XXX have to clone the hash else Rust borrows it
+        return this.h.clone();
     }
+}
+
+async function init() {
+    await _sodium.ready;
+    global.Alias.sodium = _sodium;
+    console.log("sodium ready");
 }
 
 global.Alias = {};
 global.Alias.WatchersWrapper = _WatchersWrapper;
 global.Alias.HashWrapper = _HashWrapper;
 
+module.exports.init = init;
 module.exports.rs = alias_rs;
 module.exports.Watchers = alias_rs.JsWatchers;
 module.exports.file = require("./jsfile.js")
+module.exports.anychain = require("./anychain.js");
 module.exports.Processor = require("./processor.js").Processor;
 module.exports.WatchersWrapper = _WatchersWrapper;
 module.exports.Scope = require("./scope.js").Scope;

@@ -116,7 +116,7 @@ class Handlers {
         let outs = {};
         for (let path in this.outs) {
             let h = this.outs[path];
-            outs[path] = h.as_hex();
+            outs[path] = h.as_base64();
         }
 
         return {

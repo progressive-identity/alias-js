@@ -6,7 +6,7 @@ use std::*;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-struct TarGzArchiveReader {
+pub struct TarGzArchiveReader {
     js_file: Option<JsFile>,
     inner: Option<TarIterator<flate2::read::GzDecoder<ProbeReader<io::BufReader<File>>>>>,
     watchers: Watchers,

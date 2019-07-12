@@ -101,7 +101,32 @@ class Server {
     }
 }
 
-(new Server()).listen(8000);
+const anychain = alias.anychain;
+
+(async() => {
+    await alias.init();
+
+    let sk = alias.rs.ed25519_generate();
+    let pk = alias.rs.ed25519_into_public(sk);
+
+    let obj = { foo: "bar" , fold: [{"pouet": null}]};
+    console.log("h", anychain.hash(obj).as_base64());
+    console.log("o", obj);
+    let objSigned = anychain.sign(sk, obj);
+    let objSer = anychain.toJSON(objSigned);
+
+    console.log("ser", objSer);
+
+    let objSigned2 = anychain.fromJSON(objSer);
+    anychain.verify(objSigned2);
+
+    return;
+
+    const port = 8000;
+
+    (new Server()).listen(port);
+    console.log("listening on " + port);
+})();
 
 /*
 async function main() {

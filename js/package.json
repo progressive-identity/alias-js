@@ -3,6 +3,7 @@
     "main": "app.js",
     "dependencies": {
         "googleapis": "^39.2.0",
+        "libsodium-wrappers": "^0.7.4",
         "nodejs-websocket": "^1.7.2",
         "sync-request": "^6.1.0",
         "tiny-worker": "^2.2.0"

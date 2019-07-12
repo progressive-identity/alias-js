@@ -30,7 +30,7 @@ build-web: $(WASM_PATH)
 	rm -rf $(WEB_TARGET_PATH)
 	wasm-bindgen $(WASM_PATH) --out-dir $(WEB_TARGET_PATH) --target no-modules
 
-$(WASM_PATH): $(RUST_SRC)
+$(WASM_PATH): $(RUST_SRC) Cargo.toml
 	cargo build $(CARGO_FLAGS)
 
 check:
