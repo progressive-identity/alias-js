@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <title>🔒 Alias</title>
+
+
+        <script type="application/javascript" src="jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="header.js"></script>
+        <script type="application/javascript" src="sodium.js"></script>
+        <script type="application/javascript" src="anychain.js"></script>
+        <script type="application/javascript" src="alias.js"></script>
+
+        <style>
+            html, body {
+                font-family: 'Roboto', sans-serif;
+            }
+
+            #login, #create_account, #identity, #dumps {
+                display: none;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <h1>🔒 Your Alias</h1>
+
+        <div id="login">
+            <h2>Login</h2>
+            <form>
+                <input type="password" placeholder="Your password"></input>
+                <button>Login</button>
+            </form>
+        </div>
+
+        <div id="create_account">
+            <h2>Create an identity</h2>
+            <form>
+                <input type="password" placeholder="A strong password..."></input>
+                <button>Generate a new identity</button>
+            </form>
+        </div>
+
+        <div id="identity">
+            <h2>Your Identity</h2>
+            <pre id="box"></pre>
+            <button id="logout">Logout</button>
+            <button id="clear_identity">⚠️ Clear this identity</button>
+            <br />
+        </div>
+
+        <div id="dumps">
+            <h2>Your dumps</h2>
+            <button id="link_gdrive">Link to Google Drive</button>
+            <ul></ul>
+        </div>
+
+        <script type="application/javascript" src="index.js"></script>
+    </body>
+</html>

@@ -1,0 +1,14 @@
+{
+    "name": "alias-authz",
+    "main": "app.js",
+    "dependencies": {
+        "@alias/anychain": "../anychain/js",
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "googleapis": "^39.2.0"
+    },
+    "scripts": {
+        "start": "node src/app.js"
+    }
+}

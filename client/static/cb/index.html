@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>🔒 Alias</title>
+
+
+        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="/header.js"></script>
+        <script type="application/javascript" src="/sodium.js"></script>
+        <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/alias.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <style>
+            html, body {
+                font-family: 'Roboto', sans-serif;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <div id="body">
+            <h1>{{ title }}</h1>
+            <div v-if="error">
+                <p><b>Error</b> returned: {{ error }}</p>
+            </div>
+
+            <div v-if="forged">
+                <h2></h2>
+            </div>
+
+            <div v-if="grant">
+                <ul>
+                    <li>Signer: {{ grantJSON.signer.__bytes }}</li>
+                    <li>Date: {{ grant.date }}</li>
+                    <li>Scopes: <ul>
+                        <li v-for="s in grant.body.scopes"><code>{{ s }}</code></li>
+                    </ul></li>
+                    <li>Fetch URLs:<ul>
+                        <li v-if="grant.body.fetch.frontURL"><a v-bind:href="grant.body.fetch.frontURL">{{ grant.body.fetch.frontURL }}</a></li>
+                        <li v-if="grant.body.fetch.backURL"><a v-bind:href="grant.body.fetch.backURL">{{ grant.body.fetch.backURL }}</a></li>
+                    </ul></li>
+                </ul>
+                <h2>Raw</h2>
+                <pre>{{ grantJSON }}</pre>
+            </div>
+        </div>
+        <script type="application/javascript">
+const chain = new Anychain();
+
+function run() {
+    let data = {};
+
+    const selfUrl = new URL(window.location.href);
+
+    data.error = selfUrl.searchParams.get('error');
+    if (data.error) {
+        data.title = "👎 Grant denied";
+
+    } else {
+        const token = selfUrl.searchParams.get('code');
+        data.grant = chain.fromToken(token);
+        console.log(data.grant);
+        try {
+            chain.verify(data.grant);
+            data.forged = false;
+            data.title = "👍 Granted";
+        } catch(e) {
+            data.forged = true;
+            data.title = "🛑 token is forged";
+        }
+
+        data.grantJSON = chain.toJSON(data.grant);
+    }
+
+    let vue = new Vue({
+        el: "#body",
+        data: data,
+    });
+}
+        </script>
+    </body>
+</html>

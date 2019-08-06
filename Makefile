@@ -1,61 +1,60 @@
-.PHONY: all build check build-nodejs build-web clean serve-client run npm-install clean-files
+#.PHONY: all build check build-nodejs build-web build-docker clean serve-client run npm-install clean-files build-docker serve
+.PHONY: \
+	all \
+	build \
+	build-client \
+	build-processor \
+	build-docker \
+	build-docker-sandbox \
+	check \
+	run \
+	run-client-server \
+	run-processor-daemon
 
-NAME=alias_rs
+all: build
 
-RUST_SRC=$(shell find src -type f -name '*.rs')
-RUST_TARGET ?= wasm32-unknown-unknown
-CARGO_FLAGS = --target $(RUST_TARGET)
-RELEASE ?= y
+build: build-processor build-provider build-client
 
-ifeq ($(RELEASE), y)
-	TARGET_PATH=target/$(RUST_TARGET)/release
-	CARGO_FLAGS += --release
-else
-	TARGET_PATH=target/$(RUST_TARGET)/debug
-endif
+build-processor:
+	make -C processor build
 
-WASM_PATH=$(TARGET_PATH)/$(NAME).wasm
-NODEJS_TARGET_PATH=$(TARGET_PATH)/nodejs
-WEB_TARGET_PATH=$(TARGET_PATH)/web
+build-provider: build-anychain
+	make -C provider build
 
-all: build npm-install
+build-client: build-anychain
+	make -C client build
 
-build: build-nodejs build-web
+build-anychain:
+	make -C anychain build
 
-build-nodejs: $(WASM_PATH)
-	rm -rf $(NODEJS_TARGET_PATH)
-	wasm-bindgen $(WASM_PATH) --out-dir $(NODEJS_TARGET_PATH) --target nodejs
+build-docker: build
+	make -C processor/daemon build-docker
+	make -C provider build-docker
+	make -C client build-docker
 
-build-web: $(WASM_PATH)
-	rm -rf $(WEB_TARGET_PATH)
-	wasm-bindgen $(WASM_PATH) --out-dir $(WEB_TARGET_PATH) --target no-modules
-
-$(WASM_PATH): $(RUST_SRC) Cargo.toml
-	cargo build $(CARGO_FLAGS)
+build-docker-sandbox:
+	docker build -t alias/sandbox -f docker/Dockerfile .
 
 check:
-	cargo check $(CARGO_FLAGS)
-
-dist/www:
-	cargo build $(CARGO_FLAGS)
-	wasm-bindgen $(WASM_PATH) --out-dir ./dist --target nodejs --no-typescript
-	rm -rf www/dist && mv dist www
-	ls -lha www/dist/alias_*
-
-npm-install:
-	(cd js && npm install)
-
-run:
-	@(cd js && node app.js)
+	make -C processor check
 
 clean:
-	cargo clean
-	rm -rf js/node_modules
-#	rm -rf www/dist
+	make -C client clean
+	make -C provider clean
+	make -C anychain clean
+	make -C processor clean
+	rm -rf root
 
-serve-client:
-	FLASK_APP=scripts/server.py FLASK_DEBUG=y flask run -p 8081
+### Debug run shortcuts
 
-clean-files:
-	rm -rf data/*
-	mkdir -p data/files
+run:
+	docker-compose -f docker/docker-compose.yml up
+
+# set listening port with env var ALIAS_PROCESSOR_DAEMON_PORT
+run-processor-daemon:
+	make -C processor/daemon run
+
+run-client-server:
+	FLASK_APP=scripts/server.py FLASK_DEBUG=y flask run -h 0.0.0.0 -p 8081
+
+

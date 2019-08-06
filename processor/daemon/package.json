@@ -1,0 +1,10 @@
+{
+    "name": "alias",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "nodejs-websocket": "^1.7.2",
+        "@alias/processor-base": "../base/js"
+    }
+}

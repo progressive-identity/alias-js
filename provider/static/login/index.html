@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <title>🔒 Alias - Sign-in</title>
+
+
+        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="/header.js"></script>
+        <script type="application/javascript" src="/sodium.js"></script>
+        <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/alias.js"></script>
+
+        <style>
+            html, body {
+                font-family: 'Roboto', sans-serif;
+            }
+
+            #login {
+                display: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>🔒 Sign in</h1>
+
+        <div id="login">
+            <h2>Login</h2>
+            <form>
+                <input type="password" placeholder="Your password"></input>
+                <button>Login</button>
+            </form>
+        </div>
+
+        <div id="create_account">
+            <h2>Create an identity</h2>
+            <form>
+                <input type="password" placeholder="A strong password..."></input>
+                <button>Generate a new identity</button>
+            </form>
+        </div>
+
+        <script type="application/javascript" src="login.js"></script>
+    </body>
+</html>

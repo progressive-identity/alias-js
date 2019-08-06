@@ -1,0 +1,141 @@
+swagger: "2.0"
+info:
+  description: "Alias API to access Google data from users. Accessible through the scope `google.*`."
+  version: "1.0.0"
+  title: "Alias Google API"
+basePath: "/alias/me/google/"
+tags:
+- name: "assistant"
+  description: "User's Google Assistant history"
+- name: "blob"
+  description: "Binary fetch"
+schemes:
+- "https"
+paths:
+  /my_activity/assistant/MyActivity.json:
+    get:
+      tags:
+      - "assistant"
+      summary: "Browse user's Google Assistant history"
+      description: "Returns the list of interactions from the user to its Google Assistant."
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Assistant"
+        404:
+          description: "File not found or not reachable from the client's scope"
+  /_blob/{hash}:
+    get:
+      tags:
+      - "blob"
+      summary: "Fetch binary data"
+      description: "Returns a Binary Large OBject."
+      produces:
+      - "application/octet-stream"
+      parameters:
+      - name: hash
+        type: string
+        in: path
+        required: true
+        description: the non padded URL-safe base64 form of the blob's hash. 
+      
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+            format: "binary"
+        404:
+          description: "File not found or not reachable from the client's scope"
+
+definitions:
+  Assistant:
+    required:
+      - title
+      - titleUrl
+      - time
+    type: "object"
+    properties:
+      title:
+        type: "string"
+        description: "Interaction title. Contains the user's voice transcript."
+        example: "Said What\u0027s the weather?"
+      titleUrl:
+        type: "string"
+        description: "Google Search URL for the user's interaction"
+        example: "https://www.google.com/search?q\u003dWhat%27s+the+weather%3F"
+      subtitles:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "Google Assistant's response"
+              example: "Right now in Paris it\u0027s forty-nine and partly cloudy."
+      time:
+        type: "string"
+        format: "date-time"
+        description: "Date & time when the interaction happened."
+      locationInfos:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "English description about the current location."
+              example: "Around this area"
+            url:
+              type: "string"
+              description: "Google Maps URL of the location."
+              example: "https://www.google.com/maps/@?api\u003d1\u0026map_action\u003dmap\u0026center\u003d48.845947,2.354853\u0026zoom\u003d12"
+            source:
+              type: "string"
+              description: "English description about the current location."
+              example: "From your device"
+      details:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+              description: "English description of how the the assistant were invoked"
+              example: "Started by hotword"
+      audioFiles:
+        type: "array"
+        items:
+          $ref: "#/definitions/Blob"
+  
+  Blob:
+    type: "object"
+    properties:
+      hash:
+        $ref: "#/definitions/Hash"
+      mimetype:
+        type: "string"
+        description: "mimetype of the blob"
+        example: "audio/mpeg3"
+      url:
+        type: "string"
+        description: "URL to fetch the blob"
+        example: "/alias/me/google/_blob/R8D9VJNq7f6G2E2aipFtb0piYsnVI3vObFG1Qn4-N0WoXhHyUVHnzBAeTRBwOCCARXJyq7EcZTspBfzwLWyshQ"
+
+  Hash:
+    type: "object"
+    properties:
+      type:
+        type: "string"
+        enum:
+          - "blake2b"
+          - "sha3"
+      value:
+        type: "string"
+        description: "not padded URL-safe base64 form of the hash"
+        example: "R8D9VJNq7f6G2E2aipFtb0piYsnVI3vObFG1Qn4-N0WoXhHyUVHnzBAeTRBwOCCARXJyq7EcZTspBfzwLWyshQ"
