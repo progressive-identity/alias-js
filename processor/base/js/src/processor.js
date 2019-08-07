@@ -3,12 +3,8 @@ const Worker = require("tiny-worker");
 const processorWorkerPath = "/alias/processor/base/js/src/processor_worker.js";
 
 class Processor {
-    constructor(args) {
-        if (!args.client_url) throw "missing field client_url";
-        if (!args.inp) throw "missing field inp";
-        if (!args.scopes) throw "missing field scopes";
-
-        this._args = args;
+    constructor(cb) {
+        this._cb = cb || null;
         this._worker = new Worker(processorWorkerPath);
         this._worker.onmessage = this._onmessage.bind(this);
         this._rpc_id = 0;
@@ -19,6 +15,8 @@ class Processor {
         this._worker.terminate();
         this._worker = null;
     }
+
+    // Web-worker RPC methods
 
     _new_rpc_id() {
         let id = this._rpc_id;
@@ -54,13 +52,8 @@ class Processor {
             const method = data.method;
             const args = data.data;
 
-            if (method == 'progress') {
-                if (this._args.onprogress !== undefined) {
-                    this._args.onprogress(args);
-                }
-
-            } else {
-                throw 'unknown received method from worker: ' + method;
+            if (this._cb) {
+                this._cb(args);
             }
 
         } else {
@@ -68,16 +61,18 @@ class Processor {
         }
     }
 
+    // Processor methods
+
     ping(args) {
         return this._call("ping", args || {});
     }
 
-    init() {
-        return this._call("init", this._args);
-    }
+    process_and_exit(args) {
+        if (!args.client_url) throw "missing field client_url";
+        if (!args.inp) throw "missing field inp";
+        if (!args.scopes) throw "missing field scopes";
 
-    run() {
-        return this._call("run");
+        return this._call("process_and_exit", args);
     }
 }
 

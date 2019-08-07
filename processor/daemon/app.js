@@ -59,7 +59,6 @@ class Server {
                 client_url: d.client_url,
                 inp: d.inp,
                 scopes: scopes,
-                onprogress: conn.sendJson,
             };
 
         } catch(e) {
@@ -71,11 +70,11 @@ class Server {
         console.log("Start processing");
         console.log(this._describe(args));
 
-        conn.processor = new alias.Processor(args);
         conn.startDate = new Date();
         conn.sendJson({"init": true});
-        await conn.processor.init()
-        const res = await conn.processor.run();
+        const cb = conn.sendJson;
+        conn.processor = new alias.Processor(cb);
+        const res = await conn.processor.process_and_exit(args);
 
         conn.processor.terminate();
         delete conn.processor;

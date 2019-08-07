@@ -51,7 +51,6 @@ class ProcessorApi {
 
 class Handlers {
     constructor() {
-        this.is_init = false;
         this.proc = null;
         this.outs = {};
     }
@@ -60,10 +59,8 @@ class Handlers {
         return args;
     }
 
-    init(args) {
-        if (this.is_init) {
-            throw "already initialized";
-        }
+    process_and_exit(args) {
+        const stepCount = 16;
 
         // Parse scopes and define watchers
         let providers = {};
@@ -106,21 +103,39 @@ class Handlers {
             return archive;
         });
 
+        // XXX TODO multi file archive
         if (inps.length != 1) {
             throw "multi archive not implemented";
         }
-
         const inp = inps[0];
+
+        // Watch and progress on archive
         inp.watch(w);
+        while (inp.step(stepCount)) {
+            this._notify_progress(inp.progress());
+        }
 
-        this.inps = inps;
-        this.is_init = true;
-    }
+        // Processing is finished
 
-    run() {
-        // process
-        while (this.step());
+        // Finalize every output file
+        for (const path in this.outs) {
+            const out = this.outs[path];
+            let h;
+            if (out.mode == 'file') {
+                h = out.fh.finish();
+            } else if (out.mode == 'archive') {
+                h = out.archive.finish();
+            } else {
+                throw "unknown output mode";
+            }
 
+            this.outs[path] = h;
+        }
+
+        // Notify progress to 100%
+        this._notify_progress(1.0);
+
+        // Get output file's hash
         let outs = {};
         for (let path in this.outs) {
             let h = this.outs[path];
@@ -130,37 +145,6 @@ class Handlers {
         return {
             outs: outs,
         }
-    }
-
-    step() {
-        if (!this.is_init) {
-            throw "not initialized";
-        }
-
-        const should_continue = this.inps[0].step(16);
-
-
-        if (should_continue) {
-            this._notify_progress(this.inps[0].progress());
-        } else {
-            for (const path in this.outs) {
-                const out = this.outs[path];
-                let h;
-                if (out.mode == 'file') {
-                    h = out.fh.finish();
-                } else if (out.mode == 'archive') {
-                    h = out.archive.finish();
-                } else {
-                    throw "unknown output mode";
-                }
-
-                this.outs[path] = h;
-            }
-
-            this._notify_progress(1.0);
-        }
-
-        return should_continue;
     }
 
     _notify_progress(progress) {
@@ -180,6 +164,10 @@ const handlers = new Handlers();
 onmessage = function (ev) {
     const data = ev.data;
     try {
+        if (data.method.startsWith("_")) {
+            throw "cannot call private methods";
+        }
+
         let handler = handlers[data.method];
         if (!handler) {
             throw "unknown method: " + data.method;
