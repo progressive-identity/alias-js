@@ -116,7 +116,7 @@ function cbReturn(grant) {
 function run() {
 (async () => {
     const selfUrl = new URL(window.location.href);
-    if (!currentPwh()) {
+    if (!currentUserSeed()) {
         const pathname = url.pathname + url.search;
         window.location.href = "/login/?redirect=" + encodeURIComponent(pathname);
     }

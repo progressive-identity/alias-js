@@ -154,7 +154,7 @@ function cbProcessReturn(client, grant) {
 }
 
 function run() {
-    if (!currentPwh()) {
+    if (!currentUserSeed()) {
         const url = new URL(window.location.href);
         const pathname = url.pathname + url.search;
         window.location.href = "/login/?redirect=" + encodeURIComponent(pathname);

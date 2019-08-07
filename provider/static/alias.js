@@ -4,91 +4,116 @@ const chain = new Anychain({
     passwordSalt: PublicSalt,
 });
 
-var Identity = null;
+let _publicSeed = null;
+function publicSeed() {
+    if (_publicSeed == null) {
+        const root = "sample alias authorization app";
+        _publicSeed = sodium.crypto_generichash(64, sodium.from_string(root));
+    }
 
-function calculatePwh(password) {
-    return chain.passwordSeed(password);
+    return _publicSeed;
 }
 
-function hasBox() {
-    return localStorage.getItem("box") != null;
+function userSecretSeed(user, password) {
+    const pwdSeed = chain.seedOf(user, 16, publicSeed());
+    return chain.passwordSeed(password, pwdSeed);
 }
 
-function createBox() {
+function userPublicPassHash(user, password) {
+    const pwdSeed = chain.seedOf(user, 16, publicSeed(), "public");
+    return chain.passwordSeed(password, pwdSeed);
+}
+
+function createIdentity() {
     return {
         seed: chain.seed(),
         sign: chain.signKeypair(),
     }
 }
 
-function openBox(pwh) {
-    pwh = pwh || currentPwh();
-    if (!pwh) {
-        throw "no password hash given";
-    }
+function saveBox(user, passHash, box) {
+    return $.ajax({
+        method: 'PUT',
+        url: '/alias/user',
+        headers: {
+            'Authorization': "Basic " + btoa(user + ":" + sodium.to_base64(passHash)),
+        },
+        data: {
+            box: box,
+        }
+    });
+}
 
-    let box = localStorage.getItem("box");
-    if (!box) {
+function getBox(user, passHash) {
+    return $.ajax({
+        method: 'GET',
+        url: '/alias/user',
+        headers: {
+            'Authorization': "Basic " + btoa(user + ":" + sodium.to_base64(passHash)),
+        },
+    });
+}
+
+function deleteBox(user, passHash) {
+    return $.ajax({
+        method: 'DELETE',
+        url: '/alias/user',
+        headers: {
+            'Authorization': "Basic " + btoa(user + ":" + sodium.to_base64(passHash)),
+        },
+    });
+}
+
+function mutateIdentity(sess, cb) {
+    const idty = openBox(sess.box, sess.userSeed);
+    cb(idty);
+    const box = sealBox(idty, sess.userSeed);
+    return saveBox(sess.username, sess.passHash, box)
+        .then(() => {
+            sess.box = box;
+            setSession(sess.username, sess.userSeed, sess.passHash, sess.box);
+        })
+    ;
+}
+
+function sealBox(idty, userSeed) {
+    const sk = chain.boxSeedKeypair(chain.seedOf(userSeed, 32, "box"));
+    const box = chain.seal(sk.publicKey, idty);
+    return chain.toToken(box);
+}
+
+function openBox(boxToken, userSeed) {
+    const sk = chain.boxSeedKeypair(chain.seedOf(userSeed, 32, "box"));
+    const box = chain.fromToken(boxToken);
+    const idty = chain.sealOpen(sk, box);
+    return idty;
+}
+
+function setSession(username, userSeed, passHash, box) {
+    sessionStorage.setItem("alias", chain.toToken({
+        username: username,
+        userSeed: userSeed,
+        passHash: passHash,
+        box: box,
+    }));
+}
+
+function currentSession() {
+    let sess = sessionStorage.getItem("alias");
+    if (!sess) {
         return null;
     }
-    box = chain.fromToken(box);
 
-    const sk = chain.boxSeedKeypair(chain.seedOf(pwh, 32, "box"));
-    //alert(JSON.stringify(box));
-    obj = chain.sealOpen(sk, box);
-    return obj;
+    return chain.fromToken(sess);
 }
 
-function setBox(pwh, obj) {
-    const sk = chain.boxSeedKeypair(chain.seedOf(pwh, 32, "box"));
-    const box = chain.seal(sk.publicKey, obj);
-    localStorage.setItem("box", chain.toToken(box));
-}
-
-function mutateBox(pwh, cb) {
-    let box = openBox(pwh);
-    cb(box);
-    setBox(pwh, box);
-}
-
-function login(pwh) {
-    openBox(pwh);    // XXX
-    sessionStorage.setItem("pwh", sodium.to_base64(pwh));
+function clearSession() {
+    sessionStorage.removeItem("alias");
 }
 
 function logout() {
-    sessionStorage.removeItem("pwh");
+    clearSession();
     window.location.reload();
-}
-
-function clearIdentity() {
-    sessionStorage.removeItem("pwh");
-    localStorage.removeItem("box");
-    window.location.reload();
-}
-
-function currentPwh() {
-    let pwh = sessionStorage.getItem("pwh");
-    if (!pwh) {
-        return null;
-    }
-
-    return sodium.from_base64(pwh);
-}
-
-function loadIdentity() {
-    let pwh = currentPwh();
-
-    if (pwh) {
-        try {
-            Identity = openBox(pwh);
-        } catch(er) {
-            console.error(er);
-            pwh = null;
-        }
-    }
-
-    return pwh;
 }
 
 async function gDriveList(token, args, cb) {

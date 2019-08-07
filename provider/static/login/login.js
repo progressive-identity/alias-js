@@ -1,48 +1,59 @@
 $("#create_account form").on("submit", () => {
-    const input = $("#create_account input[type=password]");
-    let pwh = calculatePwh(input.val());
-    input.val("");
+    const username = $("#create_account input[type=text]").val();
+    const passInput = $("#create_account input[type=password]");
+    const pwd = passInput.val();
+    passInput.val("");
 
-    var currentHost = new URL(window.location.href).host;
+    const userSeed = userSecretSeed(username, pwd);
+    const passHash = userPublicPassHash(username, pwd);
 
-    setBox(pwh, createBox());
-    login(pwh);
-    console.log(openBox(pwh));
+    const idty = createIdentity();
+    const box = sealBox(idty, userSeed);
+    saveBox(username, passHash, box)
+        .catch(() => {
+            alert("you cannot create an account with this username");
+        })
+        .then(() => {
+            setSession(username, userSeed, passHash, box);
+            redirect();
+        })
+    ;
 
-    redirect();
     return false;
 });
 
 $("#login form").on("submit", () => {
-    const input = $("#login input[type=password]");
-    let pwh = calculatePwh(input.val());
+    const username = $("#login input[type=text]").val();
+    const passInput = $("#login input[type=password]");
+    const pwd = passInput.val();
+    passInput.val("");
 
-    try {
-        login(pwh);
-    } catch {
-        alert("bad password");
-        return false;
-    }
+    const passHash = userPublicPassHash(username, pwd);
 
-    redirect();
+    getBox(username, passHash)
+        .then((box) => {
+            const userSeed = userSecretSeed(username, pwd);
+            setSession(username, userSeed, passHash, box);
+            redirect();
+        })
+        .catch((_) => {
+            alert("unknown user or bad password");
+        })
+    ;
+
     return false;
 });
 
 function redirect() {
     const url = new URL(window.location.href);
-    const redirect = url.searchParams.get('redirect');
+    const redirect = url.searchParams.get('redirect') || '/';
+    console.log(url.origin + redirect);
     window.location.href = url.origin + redirect;
 }
 
 function run() {
-    let pwh = loadIdentity();
-
-    if (Identity) {
-        return redirect();
-    }
-
-    if (hasBox()) {
-        $("#login").show();
+    if (currentSession()) {
+        //return redirect();
     }
 
     $("#create_account").show();

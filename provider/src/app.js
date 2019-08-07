@@ -1,18 +1,24 @@
 const express = require('express');
 const cors = require('cors');
+const basicAuth = require('express-basic-auth');
+const sodium = require('libsodium-wrappers');
+const Anychain = require('@alias/anychain');
+
 const fs = require('fs');
 const {google} = require('googleapis');
 
 const app = express()
 const listenPort = parseInt(process.env.ALIAS_AUTHZ_PORT) || 8080;
 
-const Anychain = require('@alias/anychain');
 const chain = new Anychain();
+
+const gdriveCredentialsPath = "./secret/credentials.json";
+const userDb = require('./userdb.js');
 
 app.use(require('body-parser')());
 
 function getDriveOAuth2(token, cb) {
-    fs.readFile('./secret/credentials.json', (err, content) => {
+    fs.readFile(gdriveCredentialsPath, (err, content) => {
         if (err) {
             return cb("no credentials");
         }
@@ -96,5 +102,49 @@ app.get('/alias/', cors(), (req, res) => {
     });
 });
 
+// User box management
+
+const userBasicAuth = basicAuth({
+    authorizer: (username, pwd, cb) => {
+        userDb.get(username, pwd).then(
+            (v) => cb(null, true),
+            (e) => cb(null, false)
+        );
+    },
+    authorizeAsync: true,
+});
+
+app.get('/alias/user', userBasicAuth, (req, res) => {
+    userDb.get(req.auth.user, req.auth.password).then((v) => {
+        if(v) {
+            res.send(v);
+        } else {
+            res.status(404).send();
+        }
+    });
+});
+
+app.put('/alias/user', userBasicAuth, (req, res) => {
+    const box = req.body.box;
+    if (!box) {
+        return res.status(400).send();
+    }
+
+    userDb.put(req.auth.user, req.auth.password, box).then(() => res.send());
+});
+
+app.delete('/alias/user', userBasicAuth, (req, res) => {
+    userDb.del(req.auth.user, req.auth.password).then((wasDeleted) => {
+        if (wasDeleted) {
+            res.send()
+        } else {
+            res.status(404).send();
+        }
+    });
+});
+
 app.use('/', express.static('static'))
-app.listen(listenPort, () => console.log(`Example app listening on port ${listenPort}!`))
+
+sodium.ready.then(() => {
+    app.listen(listenPort, () => console.log(`Example app listening on port ${listenPort}!`))
+});
