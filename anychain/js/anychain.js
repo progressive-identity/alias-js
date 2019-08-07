@@ -349,11 +349,11 @@ function seedOf(opt, args) {
     return seed;
 };
 
-function passwordSeed(opt, pwd) {
+function passwordSeed(pwd, salt) {
     return sodium.crypto_pwhash(
         64,
         pwd,
-        opt.passwordSalt,
+        salt,
         sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE, sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
         sodium.crypto_pwhash_ALG_DEFAULT
     );
@@ -381,7 +381,6 @@ function validate(opt, o, validator) {
 
             if (!('hashLength' in this.options)) this.options.hashLength = 64;
             if (!('key' in this.options)) this.options.key = null;
-            if (!('passwordSalt' in this.options)) this.options.passwordSalt = null;
         };
 
         Anychain.prototype.fold = function(o) {
@@ -445,8 +444,8 @@ function validate(opt, o, validator) {
             return seedOf(this.options, arguments);
         };
 
-        Anychain.prototype.passwordSeed = function(pwd) {
-            return passwordSeed(this.options, pwd);
+        Anychain.prototype.passwordSeed = function(pwd, salt) {
+            return passwordSeed(pwd, salt);
         };
 
         Anychain.prototype.validate = function(o, validator) {
