@@ -9,7 +9,9 @@
 	check \
 	run \
 	run-client-server \
-	run-processor-daemon
+	run-processor-daemon \
+	run-provider-server \
+	run-sandbox
 
 all: build
 
@@ -57,4 +59,9 @@ run-processor-daemon:
 run-client-server:
 	FLASK_APP=scripts/server.py FLASK_DEBUG=y flask run -h 0.0.0.0 -p 8081
 
+# set listening port with env var ALIAS_AUTHZ_PORT
+run-provider-server:
+	make -C provider run
 
+run-sandbox:
+	docker run -it --rm -v `pwd`:/alias alias/sandbox /bin/bash
