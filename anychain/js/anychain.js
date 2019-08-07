@@ -378,6 +378,7 @@ function validate(opt, o, validator) {
     var Anychain = (function() {
         var Anychain = function(options) {
             this.options = options || {};
+            this.ready = sodium.ready;
 
             if (!('hashLength' in this.options)) this.options.hashLength = 64;
             if (!('key' in this.options)) this.options.key = null;
@@ -460,8 +461,11 @@ function validate(opt, o, validator) {
     })();
 
 
-    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+        global.sodium = require('libsodium-wrappers');
         module.exports = Anychain;
-    else
+    }
+    else {
         window.Anychain = Anychain;
+    }
 })();
