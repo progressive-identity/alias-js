@@ -6,16 +6,30 @@ $("#clear_identity").on("click", function() {
     }
 
     const sess = currentSession();
-    deleteBox(sess.username, sess.passHash).then(logout);
+    $.ajax({
+        method: "POST",
+        url: "/api/session/clear"
+    }).then(() => {
+        deleteBox(sess.username, sess.passHash).then(logout);
+        window.location.href = "/login/";
+    });
+
+    return false;
 });
 
 $("#link_gdrive").on("click", function() {
-    window.location.href = "/api/gdrive/link/";
+    window.location.href = "/api/storage/gdrive/link/";
 });
 
 $("#logout").on("click", () => {
     logout();
 });
+
+function doLogin() {
+    const {userSeed, box} = currentSession();
+    let idty = openBox(box, userSeed);
+    login(idty.sign);
+}
 
 function run() {
     const sess = currentSession();
@@ -31,34 +45,21 @@ function run() {
 
     {
         let idty = openBox(box, userSeed);
-        if (idty.gdrive) {
-            idty.gdrive = chain.fold(idty.gdrive);
-        }
+        $("#username").text(idty.username);
         $("#box").html(JSON.stringify(chain.toJSON(idty), null, 2));
     }
 
     $("#dumps").show();
 
-    const idty = openBox(box, userSeed);
-    $("#username").text(idty.username);
-    if (idty.gdrive) {
-        gDriveList(idty.gdrive.token, {
-            q: "name contains 'takeout-' and (name contains '.zip' or name contains '.tgz')",
-            //q: "name contains 'debug'",
-            spaces: "drive",
-            //fields: 'nextPageToken, files(*)',
-            //fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink)',
-            fields: 'nextPageToken, files(*)',
-            orderBy: 'modifiedTime desc',
-        }).then((res) => {
-            $("#dumps ul").empty();
-            res.files.forEach((file) => {
+    $.ajax("/api/storage/dumps").then((r) => {
+        $("#dumps ul").empty();
+        for (let provider in r) {
+            for (let file of r[provider]) {
                 $("#dumps ul").append(
-                    '<li>Google: <a href="' + file.webViewLink + '" target="_blank" ><code>' + file.name + "</code></a> (" + file.modifiedTime + ")</li>"
+                    '<li>' + file.provider + ': <a href="' + file.webViewLink + '" target="_blank" ><code>' + file.name + "</code></a> (" + file.modifiedTime + ")</li>"
                 );
-                console.log(file);
-            });
-        });
-    }
+            }
+        }
+    });
 };
 

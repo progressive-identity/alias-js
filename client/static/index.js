@@ -1,3 +1,5 @@
+const chain = new Anychain();
+
 function run() {
     const selfURL = new URL(window.location.href);
     const clientId = `${selfURL.protocol}//${selfURL.host}/alias/`;
@@ -24,22 +26,27 @@ function run() {
 
         const baseUrl = `//${authzDomain}/alias/`;
 
-        $.ajax(baseUrl)
-            .then((r) => {
+        $.ajax("/alias/contract/common_voice").then((resContract) => {
+            resContract = chain.fromJSON(resContract);
+            chain.verify(resContract);
+            if (resContract.type != "alias.contract") { throw "not a contract"; }
+
+            return $.ajax(baseUrl).then((r) => {
                 if (r.what != "alias authz server") {
                     return alert("not an alias server");
                 }
 
                 let reqURL = `//${authzDomain}/${r.reqPath}?`;
-                reqURL += 'client_id=' + encodeURIComponent(clientId) + '&';
-                reqURL += 'username=' + encodeURIComponent(username) + '&';
-                reqURL += 'scopes=' + encodeURIComponent(scopes);
+                reqURL += 'contract=' + encodeURIComponent(chain.toToken(resContract)) + '&';
+                reqURL += 'username=' + encodeURIComponent(username);
+
+                //console.log(reqURL);
                 window.location.href = reqURL;
             })
             .catch(() => {
                 alert("something went wrong");
             })
-        ;
+        });
 
         return false;
     });

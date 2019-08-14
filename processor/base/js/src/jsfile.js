@@ -38,10 +38,9 @@ class JsFile {
  * only performed in a Web Worker
  */
 class UrlReaderSync extends JsFile {
-    constructor(url, args) {
+    constructor(args) {
         super();
-        this.url = url;
-        this.args = args || {};
+        this.args = args;
         this._cachedSize = this.args.size || null;
     }
 
@@ -50,20 +49,20 @@ class UrlReaderSync extends JsFile {
             throw "start >= end";
         }
 
-        console.debug('fetch ' + this.url + ': ' + (start/1024/1024) + '-' + (end/1024/1024) + 'MB');
+        console.debug('fetch ' + this.args.url + ': ' + (start/1024/1024) + '-' + (end/1024/1024) + 'MB');
 
         const headers = {...(this.args.headers || {}), ...{
             'Range': 'bytes=' + start + '-' + (end-1),
         }};
 
-        let res = syncRequest('GET', this.url, {
+        let res = syncRequest('GET', this.args.url, {
             headers: headers,
         });
 
         let body = res.body;
 
         if (res.statusCode != 206) {
-            return null;
+            throw "statusCode is " + res.statusCode + ", not 206";
         }
 
         let buf8 = new Uint8Array(body);
@@ -72,7 +71,7 @@ class UrlReaderSync extends JsFile {
 
     size() {
         if (this._cachedSize == null) {
-            let res = syncRequest('HEAD', this.url);
+            let res = syncRequest('HEAD', this.args.url);
 
             if (res.statusCode != 200) {
                 return null;
@@ -120,6 +119,7 @@ class UrlWriterSync extends JsFile {
         syncRequest('PUT', this.url, {
             headers: {
                 'Range': '' + start + '-' + end,
+                'Content-Type': "application/octet-stream",
             },
             body: buf,
         });

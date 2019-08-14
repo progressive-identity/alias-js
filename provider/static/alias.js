@@ -45,7 +45,7 @@ function createIdentity(username) {
 function saveBox(user, passHash, box) {
     return $.ajax({
         method: 'PUT',
-        url: '/alias/user',
+        url: '/api/user',
         headers: {
             'Authorization': "Basic " + btoa(user + ":" + sodium.to_base64(passHash)),
         },
@@ -58,7 +58,7 @@ function saveBox(user, passHash, box) {
 function getBox(user, passHash) {
     return $.ajax({
         method: 'GET',
-        url: '/alias/user',
+        url: '/api/user',
         headers: {
             'Authorization': "Basic " + btoa(user + ":" + sodium.to_base64(passHash)),
         },
@@ -68,11 +68,28 @@ function getBox(user, passHash) {
 function deleteBox(user, passHash) {
     return $.ajax({
         method: 'DELETE',
-        url: '/alias/user',
+        url: '/api/user',
         headers: {
             'Authorization': "Basic " + btoa(user + ":" + sodium.to_base64(passHash)),
         },
     });
+}
+
+function login(sk) {
+    return $.ajax("/api/session/seed")
+        .then((r) => {
+            r = chain.fromJSON(r);
+            r = chain.sign(sk, r);
+            return $.ajax({
+                method: "POST",
+                url: "/api/session/login",
+                data: chain.toJSON(r),
+            });
+        })
+        .then((r) => {
+            console.log(r);
+        })
+    ;
 }
 
 function mutateIdentity(sess, cb) {
@@ -123,30 +140,37 @@ function clearSession() {
 }
 
 function logout() {
-    clearSession();
-    window.location.reload();
-}
-
-async function gDriveList(token, args, cb) {
-    return await $.ajax({
+    $.ajax({
         method: 'POST',
-        url: '/api/gdrive/list',
-        data: {
-            token: token,
-            args: args,
-        }
+        url: '/api/session/logout'
+    }).then(() => {
+        clearSession();
+        window.location.reload();
     });
 }
 
-function gDriveDownloadRequest(token, fileId, size) {
-    return {
-        url: "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media",
-        args: {
-            headers: {
-                'Authorization': 'Bearer ' + token.access_token,
-            },
-            size: parseInt(size),
-        },
-    }
-}
+function formatScope(scope) {
+    let r = scope.provider + "." + scope.path;
 
+    if (scope.predicates) {
+        const formatPredicates = (scope.predicates).map((p) => {
+            if (p.length == 2) {
+                return p[0] + p[1];
+            } else if (p.length == 3) {
+                return p[1] + p[0] + p[2];
+            } else {
+                return "?";
+            }
+        });
+
+        r = r + "[" + formatPredicates.join(",") + "]";
+    }
+
+    if (scope.fields) {
+        r = r + ".{" + scope.fields.join(",") + "}";
+    } else {
+        r = r + ".*";
+    }
+
+    return r;
+}

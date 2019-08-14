@@ -66,17 +66,17 @@
     <html>
         <div id="popup">
         <div id="popup-content">
-            <p class="title">🔒 <em>{{ client.body.name }}</em> is requesting
+            <p class="title">🔒 <em>{{ c.client.body.name }}</em> is requesting
             access to your data</p>
 
-            <blockquote class="usage" v-if="client.body.legal && client.body.legal.usage">
-                {{ client.body.legal.usage }}
+            <blockquote class="usage" v-if="c.legal && c.legal.usage">
+                {{ c.legal.usage }}
             </blockquote>
 
             <p>This application will access to the following data:</p>
             <ul>
                 <li v-for="scope in scopes">
-                    <code>{{ scope }}</code>
+                    <code>{{ formatScope(scope) }}</code>
                 </li>
             </ul>
 
@@ -84,16 +84,17 @@
                 <p>To fulfill the request,</p>
                 <ul>
                 <li v-for="(scope, i) in consentScopes">
-                    Do you also consent to share data scoped <code>{{ scope }}</code>?
+                    Do you also consent to share data scoped <code>{{
+                        formatScope(scope) }}</code>?
                     <input type="radio" v-model="consent[i]" :value="true">Yes
                     <input type="radio" v-model="consent[i]" :value="false">No
                 </li>
                 </ul>
             </div>
 
-            <p>Your data will be shared with <em>{{client.body.name}}</em>
-                <span v-if="client.body.legal && client.body.legal.third">
-                    and <em v-for="t in client.body.legal.third">{{t}}</em>
+            <p>Your data will be shared with <em>{{c.client.body.name}}</em>
+                <span v-if="c.legal && c.legal.third">
+                    and <em v-for="t in c.legal.third">{{t}}</em>
                 </span>
             .</p>
 
@@ -104,9 +105,9 @@
             <div id="advanced-info" v-show="showAdvanced">
                 <p>
                     Your key: <code>{{userPublicKey}}</code><br />
+                    Contract ID: <code>{{cId}}</code><br />
                     Requester's key: <code>{{clientSignerH}}</code><br />
-                    Client token hash: <code>{{clientH}}</code><br />
-                    Request date: <code>{{client.date}}</code>
+                    Request date: <code>{{c.client.date}}</code>
                 </p>
             </div>
         </div>

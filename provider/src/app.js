@@ -1,99 +1,21 @@
+global.config = require('../config.json');
+global.fetch = require('node-fetch');
 const express = require('express');
 const cors = require('cors');
-const basicAuth = require('express-basic-auth');
 const sodium = require('libsodium-wrappers');
 const Anychain = require('@alias/anychain');
 
-const fs = require('fs');
-const {google} = require('googleapis');
-
 const app = express()
-const listenPort = parseInt(process.env.ALIAS_AUTHZ_PORT) || 8080;
 
-const chain = new Anychain();
+global.chain = new Anychain();
 
-const gdriveCredentialsPath = "./secret/credentials.json";
-const userDb = require('./userdb.js');
-
+app.use(require('morgan')('tiny'));
 app.use(require('body-parser')());
-
-function getDriveOAuth2(token, cb) {
-    fs.readFile(gdriveCredentialsPath, (err, content) => {
-        if (err) {
-            return cb("no credentials");
-        }
-
-        const {client_secret, client_id, redirect_uris} = JSON.parse(content).web;
-        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-
-        if (!!token) {
-            oAuth2Client.setCredentials(token);
-        }
-
-        cb(null, oAuth2Client);
-    });
-}
-
-app.get('/api/gdrive/link', (req, res) => {
-    getDriveOAuth2(null, (err, oAuth2Client) => {
-        if (err) {
-            return res.status(500).send({error: err});
-        }
-
-        //oAuth2Client.setCredentials(JSON.parse(token));
-
-        const authUrl = oAuth2Client.generateAuthUrl({
-            access_type: 'offline',
-            scope: [
-                'https://www.googleapis.com/auth/drive.readonly',
-            ]
-        });
-
-        res.redirect(authUrl);
-    });
-});
-
-app.post('/api/gdrive/list', (req, res) => {
-    const token = req.body.token;
-    const args = req.body.args;
-
-    getDriveOAuth2(req.body.token, (err, auth) => {
-        if (err) {
-            return res.status(500).send({error: "could not get Google OAuth2 client", reason: err});
-        }
-
-        const drive = google.drive({version: 'v3', auth});
-        drive.files.list(args, function(err, r) {
-            if (err) {
-                return res.status(500).send({error: "cannot get file list", reason: err});
-            }
-
-            res.send({files: r.data.files});
-        });
-    });
-});
-
-app.get('/api/gdrive/cb/', (req, res) => {
-    getDriveOAuth2(null, function(err, oAuth2Client) {
-        if (err) {
-            return res.status(500).send({error: err});
-        }
-
-        const code = req.query.code;
-        if (!code) {
-            return res.status(400).send({error: "no code"});
-        }
-
-        oAuth2Client.getToken(code, (err, token) => {
-            if (err) {
-                return res.status(500).send({error: "error retrieving access token", reason: err});
-            }
-
-            const url = "/gdrive/cb/?token=" + encodeURIComponent(JSON.stringify(token));
-            res.redirect(url);
-        });
-    });
-});
+app.use(require('cookie-session')({
+    name: 'session',
+    secret: config.http.cookieSecret,
+    maxAge: 1 * 60 * 60 * 1000, // 1h
+}));
 
 app.get('/alias/', cors(), (req, res) => {
     res.send({
@@ -102,49 +24,86 @@ app.get('/alias/', cors(), (req, res) => {
     });
 });
 
-// User box management
+const storage = require('./storage.js');
+const processing = require('./processing.js');
 
-const userBasicAuth = basicAuth({
-    authorizer: (username, pwd, cb) => {
-        userDb.get(username, pwd).then(
-            (v) => cb(null, true),
-            (e) => cb(null, false)
-        );
-    },
-    authorizeAsync: true,
-});
+app.use("/api/user", require('./userHandlers.js'));
+app.use("/api/session", require('./sessionHandlers.js'));
+app.use("/api/storage", storage.router);
 
-app.get('/alias/user', userBasicAuth, (req, res) => {
-    userDb.get(req.auth.user, req.auth.password).then((v) => {
-        if(v) {
-            res.send(v);
-        } else {
-            res.status(404).send();
+app.post("/alias/process", (req, res) => {
+    (async () => {
+        try {
+            var grant = chain.fromJSON(req.body);
+            if (!chain.isSignature(grant) || grant.body.type != "alias.grant") {
+                throw "expect a token 'alias.grant'";
+            }
+        } catch(e) {
+            return res.status(400).send({status: "error", reason: e});
         }
-    });
-});
 
-app.put('/alias/user', userBasicAuth, (req, res) => {
-    const box = req.body.box;
-    if (!box) {
-        return res.status(400).send();
-    }
+        // get mapping provider => dumps
+        const dumpsByProvider = await storage.getDumps(grant.signer);
 
-    userDb.put(req.auth.user, req.auth.password, box).then(() => res.send());
-});
-
-app.delete('/alias/user', userBasicAuth, (req, res) => {
-    userDb.del(req.auth.user, req.auth.password).then((wasDeleted) => {
-        if (wasDeleted) {
-            res.send()
-        } else {
-            res.status(404).send();
+        // list scopes by providers
+        const scopesByProvider = {};
+        for (const scope of grant.body.scopes) {
+            const provider = scope.provider;
+            scopesByProvider[provider] = scopesByProvider[provider] || [];
+            scopesByProvider[provider].push(scope);
         }
-    });
+
+        const grantBase64 = chain.fold(grant).base64();
+        const pushURL = grant.body.contract.client.body.pushURL + grantBase64;
+
+        await fetch(pushURL, {
+            method: 'PUT',
+            body: chain.toToken(grant),
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })
+
+        const processingCmds = [];
+        for (const provider in scopesByProvider) {
+            const scopes = scopesByProvider[provider];
+            const dumps = dumpsByProvider[provider];
+
+            if (!dumps) {
+                continue;
+            }
+
+            const processArgs = {
+                // XXX return only the most recent dump
+                inp: [dumps[0]].map(d => d.rawReqArgs),
+                pushURL: pushURL,
+                scopes: scopes,
+                contract: chain.toJSON(chain.fold(grant.body.contract))
+            };
+
+            processingCmds.push(processArgs);
+        }
+
+        const process = processingCmds.map(processing.process);
+        try {
+            var allProcess = await Promise.all(process);
+        } catch(e) {
+            return res.status(400).send({status: "error", reason: e});
+        }
+
+        await fetch(pushURL, {
+            method: 'POST',
+            body: {"finished": true},
+        });
+
+        return res.json({status: 'ok'});
+    })();
 });
 
 app.use('/', express.static('static'))
 
 sodium.ready.then(() => {
+    const listenPort = config.http.listenPort || 8080;
+
     app.listen(listenPort, () => console.log(`Example app listening on port ${listenPort}!`))
 });

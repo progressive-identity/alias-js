@@ -68,7 +68,7 @@ class Processor {
     }
 
     process_and_exit(args) {
-        if (!args.client_url) throw "missing field client_url";
+        if (!args.pushURL) throw "missing field pushURL";
         if (!args.inp) throw "missing field inp";
         if (!args.scopes) throw "missing field scopes";
 

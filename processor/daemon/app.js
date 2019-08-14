@@ -1,7 +1,6 @@
+global.config = require('./config.json');
 const alias = require("@alias/processor-base");
 const ws = require('nodejs-websocket');
-
-const listenPort = parseInt(process.env.ALIAS_PROCESSOR_DAEMON_PORT) || 8080;
 
 class Server {
     constructor() {
@@ -53,10 +52,10 @@ class Server {
         }
 
         try {
-            let scopes = d.scopes.map((s) => new alias.Scope(s[0], s[1], s[2], s[3]));
+            let scopes = d.scopes.map((s) => new alias.Scope(s));
 
             var args = {
-                client_url: d.client_url,
+                pushURL: d.pushURL,
                 inp: d.inp,
                 scopes: scopes,
             };
@@ -95,7 +94,7 @@ class Server {
         args.inp.forEach((inp) => r.push("... - " + inp.url + "\n"));
         r.push("... with scopes:\n");
         args.scopes.forEach((scope) => r.push("... - " + scope.provider + "." + scope.path + "\n"));
-        r.push("... to " + args.client_url + "\n");
+        r.push("... to " + args.pushURL + "\n");
 
         return r.join("");
     }
@@ -106,6 +105,7 @@ const anychain = alias.anychain;
 (async() => {
     await alias.init();
 
+    const listenPort = config.listenPort || 8080;
     (new Server()).listen(listenPort);
     console.log("listening on " + listenPort);
 })();

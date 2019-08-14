@@ -15,6 +15,10 @@ $("#create_account form").on("submit", () => {
         })
         .then(() => {
             setSession(username, userSeed, passHash, box);
+
+            return login(idty.sign);
+        })
+        .then(() => {
             redirect();
         })
     ;
@@ -31,13 +35,17 @@ $("#login form").on("submit", () => {
     const passHash = userPublicPassHash(username, pwd);
 
     getBox(username, passHash)
-        .then((box) => {
-            const userSeed = userSecretSeed(username, pwd);
-            setSession(username, userSeed, passHash, box);
-            redirect();
-        })
         .catch((_) => {
             alert("unknown user or bad password");
+        })
+        .then((box) => {
+            const userSeed = userSecretSeed(username, pwd);
+            const idty = openBox(box, userSeed);
+            setSession(username, userSeed, passHash, box);
+            return login(idty.sign);
+        })
+        .then(() => {
+            redirect();
         })
     ;
 
@@ -47,7 +55,7 @@ $("#login form").on("submit", () => {
 function redirect() {
     const url = new URL(window.location.href);
     const redirect = url.searchParams.get('redirect') || '/';
-    console.log(url.origin + redirect);
+    //console.log(url.origin + redirect);
     window.location.href = url.origin + redirect;
 }
 

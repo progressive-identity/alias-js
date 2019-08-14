@@ -1,0 +1,20 @@
+{
+    "http": {
+        "listenPort": 80,
+        "cookieSecret": "aspotgG9o/ceyqKvHwRrQFX9efsTn7o/pkD5sPxAuzK2HShWzOchgAwqTxcZn+JaugSvj7h6LlOzUJYZlhSkooSN"
+    },
+
+    "storage": {
+        "gdrive": null,
+    },
+
+    "redis": {
+        "host": "redis.authz.gdpr.dev.local"
+    },
+
+    "processor": [
+        {
+            "url": "ws://processor.authz.gdpr.dev.local/"
+        }
+    ]
+}

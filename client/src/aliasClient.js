@@ -1,8 +1,10 @@
-const express = require('express');
 const cors = require('cors');
 const Anychain = require('@alias/anychain');
+const fs = require('fs');
+const path = require('path');
+const rimraf = require('rimraf');
 
-const chain = new Anychain();
+global.chain = new Anychain();
 
 class AliasClient {
     constructor(opts) {
@@ -57,17 +59,135 @@ class AliasClient {
     }
 
     get router() {
-        let self = this;
+        const router = require('express-promise-router')();
 
-        const router = express.Router();
+        router.get('/alias/', cors(), (req, res) => {
+            res.send(chain.toJSON(this.clientDecl));
+        });
 
-        router.get('/alias/', cors(), function(req, res) {
-            res.send(chain.toJSON(self.clientDecl));
+        router.put('/alias/push/:grantHash', async (req, res) => {
+            const grant = chain.fromJSON(req.body);
+            if (chain.fold(grant).base64() !== req.params.grantHash) {
+                return res.status(400).json({status: "error", reason: "bad grant hash"});
+            }
+
+            await this.saveGrant(grant);
+            await this.clearGrantData(grant);
+            res.send();
+        });
+
+        router.post('/alias/push/:grantHash', async (req, res) => {
+            const grantHash = req.params.grantHash;
+
+            if (this.opts.onNewPush) {
+                const grant = await this.getGrant(grantHash);
+                this.opts.onNewPush(grant);
+            }
+
+            res.send();
+        });
+
+        router.put('/alias/push/:grantHash/:filename', async (req, res) => {
+            const grantHash = req.params.grantHash;
+            const filename = req.params.filename;
+
+            if (req.headers['content-type'] !== 'application/octet-stream') {
+                return res.status(400).json({status: "error", reason: "bad content type"});
+            }
+
+            let startOffset = 0;
+            let size = req.body.length;
+
+            const rangeMatch = req.headers['range'].match(/([0-9]+)-([0-9]+)/);
+            if (rangeMatch) {
+                startOffset = parseInt(rangeMatch[1]);
+                let endOffset = parseInt(rangeMatch[2]);
+                let rangeSize = endOffset+1-startOffset;
+                if (rangeSize !== size) {
+                    return res.status(400).json({status: "error", reason: "range size mismatch with body size"});
+                }
+            }
+
+            await this.saveGrantData(grantHash, filename, startOffset, req.body);
+            res.send();
+        });
+
+        router.post('/alias/push/:grantHash/:filename', async (req, res) => {
+            const grantHash = req.params.grantHash;
+            const filename = req.params.filename;
+
+            // XXX
+
+            res.send();
+
         });
 
         return router;
     }
 
+    generateContract(args) {
+        if (!args.scopes) { throw "no scopes set!"; }
+        let contract = {
+            type: "alias.contract",
+            client: this.clientDecl,
+            scopes: args.scopes,
+            legal: args.legal,
+        };
+
+        return contract;
+    }
+
+    _grantPath(grantHash) {
+        return path.join(this.opts.dataPath, "grant", grantHash);
+    }
+
+    saveGrant(grant) {
+        return new Promise((resolve, reject) => {
+            const grantPath = this._grantPath(chain.fold(grant).base64());
+            fs.mkdir(path.join(grantPath, "data"), { recursive: true }, (err) => {
+                if (err) { return reject(err); }
+
+                const grantTokenPath = path.join(grantPath, "token");
+                fs.writeFile(grantTokenPath, chain.toToken(grant), (err) => {
+                    if (err) { return reject(err); }
+                    resolve(grantPath);
+                });
+            });
+        });
+    }
+
+    async getGrant(grantHash) {
+        const grantTokenPath = path.join(this._grantPath(grantHash), "token");
+        const token = await fs.promises.readFile(grantTokenPath);
+        const grant = chain.fromToken(token);
+
+        const dataPath = path.join(this._grantPath(grantHash), "data");
+        const data = await fs.promises.readdir(dataPath);
+
+        return {
+            grant: grant,
+            data: data,
+        };
+    }
+
+    async clearGrantData(grant) {
+        return new Promise((resolve, reject) => {
+            rimraf(path.join(this._grantPath(chain.fold(grant).base64()), "data", "*"), resolve);
+        });
+    }
+
+    async saveGrantData(grantHash, filename, offset, data) {
+        const dataPath = path.join(this._grantPath(grantHash), "data", filename);
+
+        const fh = await fs.promises.open(dataPath, "a+");
+        try {
+            await fh.write(data, 0, data.length, offset);
+
+        } finally {
+            await fh.close();
+        }
+
+    }
 }
 
 module.exports = AliasClient;

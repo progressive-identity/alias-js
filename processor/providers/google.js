@@ -1,6 +1,6 @@
 let path = {}
 
-path["myactivity.assistant"] = function(scope) {
+path["my_activity.assistant"] = function(scope) {
     return function(w, p) {
         const archive_path = "google_myactivity_assistant";
 
@@ -48,7 +48,7 @@ path["myactivity.assistant"] = function(scope) {
     };
 }
 
-path["myactivity.search"] = function(scope) {
+path["my_activity.search"] = function(scope) {
     return function (w, p) {
         const on_index = function(path, reader) {
             if (!reader) {

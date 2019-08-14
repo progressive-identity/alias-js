@@ -202,6 +202,7 @@ function isRevocation(o) {
 
 function isDict(o) {
     return (
+        o !== null &&
         typeof(o) == "object" &&
         o.constructor != Uint8Array &&
         o.constructor != Hash &&
@@ -244,6 +245,8 @@ function verify(opt, o) {
             verify(opt, o[k]);
         }
     }
+
+    return o;
 }
 
 function fromJSON(o) {
@@ -405,7 +408,7 @@ function validate(opt, o, validator) {
         };
 
         Anychain.prototype.fromJSON = function(o) {
-            return fromJSON(o);
+            return this.verify(fromJSON(o));
         };
 
         Anychain.prototype.toToken = function(o) {
@@ -456,6 +459,8 @@ function validate(opt, o, validator) {
         Anychain.prototype.revoke = function(sk, o) {
             return revoke(this.options, sk, o);
         };
+
+        Anychain.prototype.isSignature = isSignature;
 
         return Anychain;
     })();

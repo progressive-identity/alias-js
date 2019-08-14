@@ -11,14 +11,14 @@ const alias = require(path.join(__fakedirname, 'alias.js'));
 const processors = require(path.join(__fakedirname, '../../../providers', 'all.js'));
 
 class ProcessorApi {
-    constructor(client_url, outs) {
-        this._client_url = client_url;
+    constructor(pushURL, outs) {
+        this._pushURL = pushURL;
         this._outs = outs;
     }
 
     out_file(path) {
         if (!(path in this._outs)) {
-            const url = this._client_url + "/" + path;
+            const url = this._pushURL + "/" + path;
             let fh = new alias.file.UrlWriterSync(url);
             fh = new alias.RawWriter(fh);
             this._outs[path] = {mode: 'file', fh: fh};
@@ -34,7 +34,7 @@ class ProcessorApi {
 
     out_archive(path) {
         if (!(path in this._outs)) {
-            const url = this._client_url + "/" + path + ".tgz";
+            const url = this._pushURL + "/" + path + ".tgz";
             const fh = new alias.file.UrlWriterSync(url);
             const archive = new alias.TarGzArchiveWriter(fh);
             this._outs[path] = {mode: 'archive', archive: archive};
@@ -66,7 +66,7 @@ class Handlers {
         let providers = {};
         let watchers = {};
         args.scopes.forEach((scope) => {
-            scope = new alias.Scope(scope.provider, scope.path, scope.predicates, scope.fields);
+            scope = new alias.Scope(scope);
 
             // Load lazily provider
             const name = scope.provider;
@@ -90,7 +90,7 @@ class Handlers {
         });
 
         // Create initial watcher
-        let p_api = new ProcessorApi(args.client_url, this.outs);
+        let p_api = new ProcessorApi(args.pushURL, this.outs);
         let w = new alias.Watchers();
         for (const path in watchers) {
             watchers[path](w, p_api);
@@ -98,7 +98,7 @@ class Handlers {
 
         // Create readers
         let inps = args.inp.map((inp) => {
-            const fh = new alias.file.UrlReaderSync(inp.url, inp.args || {});
+            const fh = new alias.file.UrlReaderSync(inp);
             const archive = new alias.TarGzArchiveReader(fh);
             return archive;
         });

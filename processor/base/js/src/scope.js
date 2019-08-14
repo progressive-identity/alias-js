@@ -5,21 +5,22 @@ let predicateByOps = {
     ">=":  function(e, field, val) { return e[field] >= val; },
     "<":   function(e, field, val) { return e[field] < val; },
     "<=":  function(e, field, val) { return e[field] <= val; },
+    "has": function(e, field) { return field in e },
 };
 
 class Scope {
-    constructor(provider, path, predicates, fields) {
-        this.provider = provider;
-        this.path = path;
-        this.predicates = predicates || [];
-        this.fields = fields;
+    constructor(scope) {
+        this.provider = scope.provider;
+        this.path = scope.path;
+        this.predicates = scope.predicates || [];
+        this.fields = scope.fields || null;
     }
 
     match(e) {
-        for (const pred in this.predicates) {
+        for (const pred of this.predicates) {
             const op = pred[0];
             const predFunc = predicateByOps[op];
-            if (pred === undefined) {
+            if (!predFunc) {
                 throw "unknown predicate operator: " + op;
             }
 
