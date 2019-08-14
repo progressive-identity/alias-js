@@ -7,7 +7,7 @@ $("#create_account form").on("submit", () => {
     const userSeed = userSecretSeed(username, pwd);
     const passHash = userPublicPassHash(username, pwd);
 
-    const idty = createIdentity();
+    const idty = createIdentity(username);
     const box = sealBox(idty, userSeed);
     saveBox(username, passHash, box)
         .catch(() => {

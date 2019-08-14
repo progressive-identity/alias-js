@@ -24,11 +24,22 @@ function userPublicPassHash(user, password) {
     return chain.passwordSeed(password, pwdSeed);
 }
 
-function createIdentity() {
-    return {
+function createIdentity(username) {
+    let idty = {
+        username: username,
         seed: chain.seed(),
         sign: chain.signKeypair(),
-    }
+    };
+
+    const selfURL = new URL(window.location.href);
+
+    let bind = {
+        type: "alias.bindAuthz",
+        domain: selfURL.hostname,
+    };
+    idty.bind = chain.sign(idty.sign, bind);
+
+    return idty;
 }
 
 function saveBox(user, passHash, box) {

@@ -1,46 +1,58 @@
-$("#clear_identity").on("click", function() {
-    clearIdentity();
-});
-
-$("#link_gdrive").on("click", function() {
-    window.location.href = "/api/gdrive/link/";
-});
-
-$("#logout").on("click", () => {
-    logout();
-});
-
 function run() {
-    let pwh = loadIdentity();
+    const selfURL = new URL(window.location.href);
+    const clientId = `${selfURL.protocol}//${selfURL.host}/alias/`;
 
-    if (Identity) {
-        $("#identity").show();
-        $("#box").html(JSON.stringify(openBox(pwh), null, 2));
-        $("#dumps").show();
+    $("#alias-login").click(function() {
+        $("#name").show().focus();
+    });
 
-        const box = openBox(pwh);
-        if (box.gdrive) {
-            gDriveList(box.gdrive.token, {
-                q: "name contains 'takeout-' and (name contains '.zip' or name contains '.tgz')",
-                //q: "name contains 'debug'",
-                spaces: "drive",
-                //fields: 'nextPageToken, files(*)',
-                //fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink)',
-                fields: 'nextPageToken, files(*)',
-                orderBy: 'modifiedTime desc',
-            }).then((res) => {
-                $("#dumps ul").empty();
-                res.files.forEach((file) => {
-                    $("#dumps ul").append(
-                        '<li>Google: <a href="' + file.webViewLink + '" target="_blank" ><code>' + file.name + "</code></a> (" + file.modifiedTime + ")</li>"
-                    );
-                    console.log(file);
-                });
-            });
+    function error(m) {
+        alert(m);
+    }
+
+    $("#login").on("submit", function(e) {
+        const re = /^([a-zA-Z0-9\-\.\_]+)@([a-zA-Z\-\.\_]+)$/;
+        const match = $("#name").val().match(re);
+        if (!match) {
+            alert("bad alias");
+            return false;
         }
 
-    } else {
-        window.location.href = "/login/?redirect=%2f";
-    }
-};
+        const username = match[1];
+        const authzDomain = match[2];
+        const scopes = $("#scopes").val();
+
+        const baseUrl = `//${authzDomain}/alias/`;
+
+        $.ajax(baseUrl)
+            .then((r) => {
+                if (r.what != "alias authz server") {
+                    return alert("not an alias server");
+                }
+
+                let reqURL = `//${authzDomain}/${r.reqPath}?`;
+                reqURL += 'client_id=' + encodeURIComponent(clientId) + '&';
+                reqURL += 'username=' + encodeURIComponent(username) + '&';
+                reqURL += 'scopes=' + encodeURIComponent(scopes);
+                window.location.href = reqURL;
+            })
+            .catch(() => {
+                alert("something went wrong");
+            })
+        ;
+
+        return false;
+    });
+
+    $("#clear_all_grants").click(function() {
+        $.ajax({
+            url: "/clear_grants",
+            method: 'POST'
+        }).done(function() {
+            window.location.reload();
+        }).fail(function() {
+            alert("server error");
+        });
+    });
+}
 

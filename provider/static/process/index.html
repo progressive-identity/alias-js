@@ -94,7 +94,7 @@ function bytesEq(a, b) {
 function cbReturnError(grant, error, desc, uri) {
     const state = (new URL(window.location.href)).searchParams.get('state');
 
-    url = grant.body.client.body.redirect_url + "?";
+    url = grant.body.client.body.redirectURL + "?";
     url = url + "error=" + encodeURIComponent(error);
     if (desc)  url = url + "&error_description=" + encodeURIComponent(desc);
     if (uri)   url = url + "&error_uri=" + encodeURIComponent(uri);
@@ -106,7 +106,7 @@ function cbReturnError(grant, error, desc, uri) {
 function cbReturn(grant) {
     const state = (new URL(window.location.href)).searchParams.get('state');
 
-    let url = grant.body.client.body.redirect_url + "?";
+    let url = grant.body.client.body.redirectURL + "?";
     url = url + "code=" + encodeURIComponent(chain.toToken(grant));
     if (state) url = url + "&state=" + encodeURIComponent(state);
 

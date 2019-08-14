@@ -40,6 +40,7 @@ function run() {
     $("#dumps").show();
 
     const idty = openBox(box, userSeed);
+    $("#username").text(idty.username);
     if (idty.gdrive) {
         gDriveList(idty.gdrive.token, {
             q: "name contains 'takeout-' and (name contains '.zip' or name contains '.tgz')",

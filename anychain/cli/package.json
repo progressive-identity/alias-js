@@ -1,0 +1,9 @@
+{
+    "name": "anychain-cli",
+    "main": "app.js",
+    "dependencies": {
+        "@alias/anychain": "../../anychain/js",
+        "command-line-args": "^5.1.1",
+        "libsodium-wrappers": "^0.7.4"
+    }
+}

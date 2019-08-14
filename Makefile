@@ -57,7 +57,7 @@ run-processor-daemon:
 	make -C processor/daemon run
 
 run-client-server:
-	FLASK_APP=scripts/server.py FLASK_DEBUG=y flask run -h 0.0.0.0 -p 8081
+	make -C client run
 
 # set listening port with env var ALIAS_AUTHZ_PORT
 run-provider-server:
