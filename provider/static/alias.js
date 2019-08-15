@@ -155,7 +155,7 @@ function formatScope(scope) {
     if (scope.predicates) {
         const formatPredicates = (scope.predicates).map((p) => {
             if (p.length == 2) {
-                return p[0] + p[1];
+                return p[0] + " " + p[1];
             } else if (p.length == 3) {
                 return p[1] + p[0] + p[2];
             } else {

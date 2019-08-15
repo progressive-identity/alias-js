@@ -1,0 +1,74 @@
+<html>
+    <head>
+        <title>🔒 Revoke grant</title>
+
+        <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="/header.js"></script>
+        <script type="application/javascript" src="/sodium.js"></script>
+        <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/alias.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <style>
+        html {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .title {
+            font-size: 120%;
+            font-weight: bold;
+        }
+
+        #popup {
+            display: none;
+            background-color: white;
+            width: 550px;
+            border: 1px solid #ccd6dd;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 40px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #popup-content {
+            position: relative;
+            /*margin-right: 250px;*/
+        }
+
+        #client {
+            position: absolute;
+            top: 0;
+            right: -250px;
+            width: 230px;
+            color: #8899a6;
+        }
+
+        .desc {
+            font-size: 80%;
+        }
+        </style>
+    </head>
+
+    <html>
+        <div id="popup">
+        <div id="popup-content">
+            <p class="title">🔒 Revoke access to <em>{{ grant.body.contract.client.body.name }}</em> ?</p>
+
+            <p>This application is accessing the following data:</p>
+            <ul>
+                <li v-for="scope in grant.body.scopes">
+                    <code>{{ formatScope(scope) }}</code>
+                </li>
+            </ul>
+
+            <button v-on:click="revoke">Revoke</button>
+            <button v-on:click="cancel">Cancel</button>
+          </div>
+        </div>
+        <script type="application/javascript" src="index.js"></script>
+    </html>
+</html>
+

@@ -36,6 +36,7 @@ class AliasClient {
             name: this.opts.name,
             desc: this.opts.desc,
             domain: this.opts.domain,
+            url: this.opts.url,
             redirectURL: this.opts.redirectURL,
             pushURL: this.opts.pushURL,
             legal: this.opts.legal,

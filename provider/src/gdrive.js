@@ -23,21 +23,21 @@ function oauth2Client(publicKey, token) {
 
     if (token) {
         client.setCredentials(token);
+
+        client.on('tokens', (tokens) => {
+            console.log("GDRIVE RENEW TOKENS");
+            if (tokens.refresh_token) {
+                token.refresh_token = tokens.refresh_token;
+            }
+
+            token.access_token = tokens.access_token;
+            token.expiry_date = tokens.expiry_date;
+            token.scope = tokens.scope;
+            token.token_type = tokens.token_type;
+
+            setToken(publicKey, token);
+        });
     }
-
-    client.on('tokens', (tokens) => {
-        console.log("GDRIVE RENEW TOKENS");
-        if (tokens.refresh_token) {
-            token.refresh_token = tokens.refresh_token;
-        }
-
-        token.access_token = tokens.access_token;
-        token.expiry_date = tokens.expiry_date;
-        token.scope = tokens.scope;
-        token.token_type = tokens.token_type;
-
-        setToken(publicKey, token);
-    });
 
     return client;
 }
@@ -57,6 +57,10 @@ router.get('/link', authed, (req, res) => {
     });
 
     res.redirect(authUrl);
+});
+
+router.post('/unlink', authed, (req, res) => {
+    redis.db.hdel(redis.key("user", req.alias.publicKey), "gdrive").then(() => res.json());
 });
 
 router.get('/debug', authed, (req, res) => {
@@ -85,12 +89,16 @@ router.get('/cb', authed, (req, res) => {
         return res.status(400).send({error: "no code"});
     }
 
+    console.log(code);
+
     oauth2Client(req.alias.publicKey, null)
         .getToken(code)
         .then((r) => {
+            console.log("a");
             return setToken(req.alias.publicKey, r.tokens);
         })
         .then(() => {
+            console.log("b");
             res.redirect("/");
         })
         .catch((err) => {

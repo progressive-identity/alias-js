@@ -411,12 +411,20 @@ function validate(opt, o, validator) {
             return this.verify(fromJSON(o));
         };
 
+        Anychain.prototype.fromSafeJSON = function(o) {
+            return fromJSON(o);
+        };
+
         Anychain.prototype.toToken = function(o) {
             return JSON.stringify(toJSON(o));
         };
 
         Anychain.prototype.fromToken = function(code) {
-            return fromJSON(JSON.parse(code));
+            return this.fromJSON(JSON.parse(code));
+        };
+
+        Anychain.prototype.fromSafeToken = function(code) {
+            return this.fromSafeJSON(JSON.parse(code));
         };
 
         Anychain.prototype.verify = function(o) {

@@ -1,0 +1,52 @@
+<html>
+    <head>
+        <title>🔒 Alias</title>
+
+        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="/header.js"></script>
+        <script type="application/javascript" src="/sodium.js"></script>
+        <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/alias.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <style>
+            html, body {
+                font-family: 'Roboto', sans-serif;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <div id="vue">
+            <h1>🔒 Client</h1>
+
+            <p v-if="client === false">This client is unknown.</p>
+
+            <ul v-if="client">
+                <li>Name: {{ client.body.name }}</li>
+                <li>Description: {{ client.body.desc }}</li>
+                <li>Link: <a :href="client.body.url">{{ client.body.url }}</a></li>
+                <li>Client declaration signature date: {{ client.date }}</li>
+            </ul>
+
+            <div v-if="view">
+                <div v-for="(grant, grantID) in view">
+                    <h2>Grant #{{ grantID+1 }}</h2>
+                    <ul>
+                        <li>Date: {{ grant.date }}</li>
+                        <li>Scopes: <ul>
+                            <li v-for="scope in grant.body.scopes">
+                                <code>{{ formatScope(scope) }}</code>
+                            </li>
+                        </ul></li>
+                    </ul>
+
+                    <button v-on:click="revokeGrant(grant)">Revoke this grant</button>
+                </div>
+            </div>
+        </div>
+
+        <script type="application/javascript" src="index.js"></script>
+    </body>
+</html>

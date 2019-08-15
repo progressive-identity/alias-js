@@ -3,7 +3,7 @@ var vue = null;
 function cbReturnError(contract, error, desc, uri) {
     const state = (new URL(window.location.href)).searchParams.get('state');
 
-    url = contract.client.body.redirectURL + "?";
+    let url = contract.client.body.redirectURL + "?";
     url = url + "error=" + encodeURIComponent(error);
     if (desc)  url = url + "&error_description=" + encodeURIComponent(desc);
     if (uri)   url = url + "&error_uri=" + encodeURIComponent(uri);
@@ -20,6 +20,7 @@ function cbReturn(contract, grant, bind) {
     url = url + "&bind=" + encodeURIComponent(chain.toToken(bind));
     if (state) url = url + "&state=" + encodeURIComponent(state);
 
+    //console.log("redirect to", url);
     window.location.href = url;
 }
 
@@ -107,8 +108,18 @@ function run() {
                     scopes: scopes,
                 };
                 grant = chain.sign(idty.sign, grant);
-                //cbProcessReturn(client, grant);
-                cbReturn(contract, grant, idty.bind);
+
+                console.log(chain.toJSON(grant));
+
+                $.ajax({
+                    method: 'POST',
+                    url: "/api/grant/new",
+                    data: chain.toToken(grant),
+                    contentType: "application/json",
+                }).then((r) => {
+                    //cbProcessReturn(client, grant);
+                    cbReturn(contract, grant, idty.bind);
+                });
             },
             deny: function() {
                 cbReturnError(contract, "access_denied");

@@ -12,6 +12,7 @@ const AliasClient = require('./aliasClient.js');
         secretSeed: "pouet",
 
         domain: "client.gdpr.dev.local",
+        url: "http://client.gdpr.dev.local/",
         scheme: 'http',
         redirectURL: "http://client.gdpr.dev.local/cb/",
 
@@ -60,11 +61,6 @@ const AliasClient = require('./aliasClient.js');
     app.use(client.router);
     app.get("/alias/contract/common_voice", (req, res) => {
         res.send(chain.toJSON(contract));
-    });
-
-    app.put('/alias/push/', (req, res) => {
-        console.log("push");
-        res.json({});
     });
 
     app.use('/', express.static('static'));

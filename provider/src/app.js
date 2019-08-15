@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const sodium = require('libsodium-wrappers');
 const Anychain = require('@alias/anychain');
+const {authed, asyncMiddleware} = require('./utils.js');
 
 const app = express()
 
@@ -26,10 +27,74 @@ app.get('/alias/', cors(), (req, res) => {
 
 const storage = require('./storage.js');
 const processing = require('./processing.js');
+const grant = require('./grant.js');
 
 app.use("/api/user", require('./userHandlers.js'));
 app.use("/api/session", require('./sessionHandlers.js'));
+app.use("/api/grant", grant.router);
 app.use("/api/storage", storage.router);
+
+app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
+    const grantByID = await grant.getGrants(req.alias.publicKey);
+    const clientByID = {};
+
+    // provider > path > app > grant
+    const viewModel = {};
+    for (const grantID in grantByID) {
+        const grant = grantByID[grantID];
+        for (const scope of grant.body.scopes) {
+            const client = grant.body.contract.client;
+            const clientID = chain.fold(client).base64();
+
+            clientByID[clientID] = client;
+
+            const byProvider = viewModel[scope.provider] || {};
+            const byPath = byProvider[scope.path] || {};
+            const byClient = byPath[clientID] || [];
+            byClient.push(grantID);
+
+            byPath[clientID] = byClient;
+            byProvider[scope.path] = byPath;
+            viewModel[scope.provider] = byProvider;
+        }
+    }
+
+    const r = {
+        grants: grantByID,
+        clients: clientByID,
+        view: viewModel,
+    };
+
+    res.json(chain.toJSON(r));
+}));
+
+app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) => {
+    const clientID = req.params.clientID;
+    const grantByID = await grant.getGrants(req.alias.publicKey);
+    let client = null;
+
+    // app > grant
+    const viewModel = [];
+    for (const grantID in grantByID) {
+        const grant = grantByID[grantID];
+        if (chain.fold(grant.body.contract.client).base64() !== clientID) {
+            continue;
+        }
+
+        client = grant.body.contract.client;
+
+        viewModel.push(grant);
+    }
+
+    if (client == null) {
+        return res.status(404).json({});
+    }
+
+    res.json(chain.toJSON({
+        view: viewModel,
+        client: client,
+    }));
+}));
 
 app.post("/alias/process", (req, res) => {
     (async () => {

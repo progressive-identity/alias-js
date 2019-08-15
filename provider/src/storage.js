@@ -47,9 +47,14 @@ async function getDumps(publicKey) {
     // XXX add more provider
 }
 
-router.get('/tokens', authed, (req, res) => {
+router.get('/', authed, (req, res) => {
     getTokens(req.alias.publicKey).then((r) => {
-        res.status(200).send(r);
+        const resp = {};
+        for (const k in r) {
+            resp[k] = !!r[k];
+        }
+
+        res.status(200).send(resp);
     });
 });
 

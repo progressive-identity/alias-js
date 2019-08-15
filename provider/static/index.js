@@ -31,6 +31,40 @@ function doLogin() {
     login(idty.sign);
 }
 
+const vue = new Vue({
+    el: "#vue",
+    data: {
+        idty: null,
+        storage: null,
+        grants: null,
+        clients: null,
+        view: null,
+    },
+    methods: {
+        storageLink: function(provider) {
+            window.location.href = "/api/storage/" + provider + "/link/";
+
+        },
+        storageUnlink: function(provider) {
+            const self = this;
+
+            $.ajax({
+                method: 'POST',
+                url: "/api/storage/" + provider + "/unlink/",
+            }).then((r) => {
+                // XXX TODO BUG
+                self.storage[provider] = false;
+            });
+        },
+        displayClient: function(clientID) {
+            window.location.href = "/client/?client=" + clientID;
+        },
+        revokeClient: function(clientID) {
+            window.location.href = "/client/revoke/?client=" + clientID;
+        }
+    },
+});
+
 function run() {
     const sess = currentSession();
 
@@ -41,16 +75,29 @@ function run() {
 
     const {userSeed, box} = sess;
 
-    $("#identity").show();
+    const idty = openBox(box, userSeed);
+    vue.idty = {
+        username: idty.username,
+        alias: idty.username + "@" + idty.bind.body.domain,
+        anonymousAlias: sodium.to_hex(idty.bind.signer) + "@" + idty.bind.body.domain,
+        publicKey: sodium.to_base64(idty.sign.publicKey),
+    };
 
-    {
-        let idty = openBox(box, userSeed);
-        $("#username").text(idty.username);
-        $("#box").html(JSON.stringify(chain.toJSON(idty), null, 2));
-    }
+    $.ajax("/api/view/index").then((r) => {
+        vue.grants = r.grants;
+        vue.clients = r.clients;
+        vue.view = r.view;
+    }).catch((e) => {
+        if (e.status == 401) {
+            window.location.href = "/login";
+        }
+    });
 
-    $("#dumps").show();
+    $.ajax("/api/storage/").then((r) => {
+        vue.storage = r;
+    });
 
+    /*
     $.ajax("/api/storage/dumps").then((r) => {
         $("#dumps ul").empty();
         for (let provider in r) {
@@ -61,5 +108,6 @@ function run() {
             }
         }
     });
+    */
 };
 
