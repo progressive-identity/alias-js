@@ -13,7 +13,7 @@ class AliasClient {
         if (!opts.name) { throw "no name set!"; }
         if (!opts.domain) { throw "no domain set!"; }
 
-        opts.dataPath = opts.dataPath || "client_data";
+        opts.dataPath = opts.dataPath || "/client_data";
         opts.scheme = opts.scheme || 'https';
         opts.redirectURL = opts.redirectURL || opts.scheme + "://" + opts.domain + "/alias/cb/";
         opts.pushURL = opts.pushURL || opts.scheme + "://" + opts.domain + "/alias/push/";
@@ -64,6 +64,14 @@ class AliasClient {
 
         router.get('/alias/', cors(), (req, res) => {
             res.send(chain.toJSON(this.clientDecl));
+        });
+
+        router.post('/alias/grant', async (req, res) => {
+            const grant = chain.fromToken(req.body.grant);
+            const bind = chain.fromToken(req.body.bind);
+            await this.saveGrant(grant, bind);
+
+            res.json({});
         });
 
         router.put('/alias/push/:grantHash', async (req, res) => {
@@ -142,19 +150,18 @@ class AliasClient {
         return path.join(this.opts.dataPath, "grant", grantHash);
     }
 
-    saveGrant(grant) {
-        return new Promise((resolve, reject) => {
-            const grantPath = this._grantPath(chain.fold(grant).base64());
-            fs.mkdir(path.join(grantPath, "data"), { recursive: true }, (err) => {
-                if (err) { return reject(err); }
+    async saveGrant(grant, bind) {
+        const grantPath = this._grantPath(chain.fold(grant).base64());
+        await fs.promises.mkdir(path.join(grantPath, "data"), { recursive: true });
 
-                const grantTokenPath = path.join(grantPath, "token");
-                fs.writeFile(grantTokenPath, chain.toToken(grant), (err) => {
-                    if (err) { return reject(err); }
-                    resolve(grantPath);
-                });
-            });
-        });
+        const grantTokenPath = path.join(grantPath, "token");
+        await fs.promises.writeFile(grantTokenPath, chain.toToken(grant));
+
+        if (bind) {
+            // XXX TODO check if bind is older before overwriting it
+            const bindTokenPath = path.join(grantPath, "bind_token");
+            await fs.promises.writeFile(bindTokenPath, chain.toToken(bind));
+        }
     }
 
     async getGrant(grantHash) {
@@ -162,11 +169,21 @@ class AliasClient {
         const token = await fs.promises.readFile(grantTokenPath);
         const grant = chain.fromToken(token);
 
+        let bind = null;
+        try {
+            const bindTokenPath = path.join(this._grantPath(grantHash), "bind_token");
+            const bindToken = await fs.promises.readFile(bindTokenPath);
+            bind = chain.fromToken(bindToken);
+        } catch(e) {
+            //
+        }
+
         const dataPath = path.join(this._grantPath(grantHash), "data");
         const data = await fs.promises.readdir(dataPath);
 
         return {
             grant: grant,
+            bind: bind,
             data: data,
         };
     }
@@ -187,24 +204,74 @@ class AliasClient {
         } finally {
             await fh.close();
         }
+    }
 
+    async fetch(grantHash, opts) {
+        opts = opts || {};
+        opts.force = opts.force != null ? opts.force : false;
+
+        const {grant, bind, data} = await this.getGrant(grantHash);
+        const processURL = bind.body.origin + "/alias/process";
+
+        if (data.length == 0 || opts.force) {
+            const r = await fetch(processURL, {
+                method: 'POST',
+                body: chain.toToken(grant),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const resJson = await r.json();
+console.log("resJson", resJson);
+            if (resJson.status == "error") {
+                throw resJson.reason;
+            }
+
+            const grantPath = this._grantPath(grantHash);
+            const dataPath = path.join(grantPath, "data");
+
+            // XXX TODO better handling of extract of data
+            const util = require('util');
+            const exec = util.promisify(require('child_process').exec);
+
+            try {
+                await exec('tar xfz root.tar.gz && rm root.tar.gz', {
+                    cwd: path.join(grantPath, "data"),
+                });
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    }
+
+    getDataPath(grantHash) {
+        return path.join("grants", grantHash, "data");
+    }
+
+    async browse(grantHash, basePath) {
+        basePath = basePath || "";
+
+        // XXX TODO better handling of extract of data
+        const util = require('util');
+        const exec = util.promisify(require('child_process').exec);
+
+        const grantPath = this._grantPath(grantHash);
+        const r = await exec('find .', {
+            cwd: path.join(grantPath, "data", basePath),
+        });
+
+        const listing = r.stdout.split("\n")
+            .filter(p => p.length > 0 && p !== "." && p !== "..")
+            .map(p => p.substr(2));
+
+        return listing;
+    }
+
+    getFilePath(grantHash, basePath) {
+        return path.join(this._grantPath(grantHash), "data", basePath);
     }
 }
 
 module.exports = AliasClient;
 
-/*
-let o = {
-    type: 'alias.client.decl',
-    desc: "Teach machines how real people speak.",
-    name: "Common Voice",
-    domain: 'client.gdpr.dev.local',
-    redirect_url: 'http://client.gdpr.dev.local/cb/',
-    chain_url: 'http://172.21.0.1:8081/files/debug',
-    crypto: {
-        sign: signSk.publicKey,
-        box: boxSk.publicKey,
-    }
-
-};
-*/

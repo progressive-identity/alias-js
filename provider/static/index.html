@@ -22,8 +22,8 @@
         <h1>🔒 Home</h1>
 
         <div id="vue">
-            <button id="logout">Logout</button>
-            <button id="clear_identity">⚠️ Clear this identity</button>
+            <button v-on:click="logout">Logout</button>
+            <button v-on:click="clear_identity">⚠️ Clear this identity</button>
 
             <div v-if="idty">
                 <h2>Identity</h2>

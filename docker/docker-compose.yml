@@ -34,8 +34,9 @@ services:
         command: "sh -c \"(cd client && nodemon src/app.js)\""
         volumes:
             - ../:/alias
+            - ../data/client:/client_data
         links:
-            - redis.authz.gdpr.dev.local
+            - redis.client.gdpr.dev.local
 
     redis.client.gdpr.dev.local:
         image: redis

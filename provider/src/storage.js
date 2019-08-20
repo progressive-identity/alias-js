@@ -18,8 +18,6 @@ async function getTokens(publicKey) {
 }
 
 async function getDumps(publicKey) {
-    const tokens = await getTokens(publicKey);
-
     const dumps = [];
 
     // XXX DEBUG
@@ -29,13 +27,13 @@ async function getDumps(publicKey) {
             name: "local google",
             size: 58047624,
             rawReqArgs: {
-                url: "http://172.17.0.1:8081/takeout-20190710T135348Z-001.tgz",
+                url: "http://172.17.0.1:8080/takeout-20190710T135348Z-001.tgz",
             }
         });
     }
 
-    const drive = await gdrive.listDumps(publicKey, tokens.gdrive);
-    dumps.push(...drive);
+    //const drive = await gdrive.listDumps(publicKey);
+    //dumps.push(...drive);
 
     const r = {};
     for (let d of dumps) {

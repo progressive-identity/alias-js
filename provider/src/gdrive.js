@@ -50,7 +50,7 @@ function gdriveClient(publicKey, token) {
 router.get('/link', authed, (req, res) => {
     const drive = oauth2Client(req.alias.publicKey, null);
     const authUrl = drive.generateAuthUrl({
-        access_type: 'offline',
+        access_type: 'online',
         scope: [
             'https://www.googleapis.com/auth/drive.readonly',
         ]
@@ -94,11 +94,10 @@ router.get('/cb', authed, (req, res) => {
     oauth2Client(req.alias.publicKey, null)
         .getToken(code)
         .then((r) => {
-            console.log("a");
+            console.log(r.tokens);
             return setToken(req.alias.publicKey, r.tokens);
         })
         .then(() => {
-            console.log("b");
             res.redirect("/");
         })
         .catch((err) => {
@@ -107,7 +106,8 @@ router.get('/cb', authed, (req, res) => {
     ;
 });
 
-function listDumps(publicKey, token) {
+async function listDumps(publicKey) {
+    const token = await getToken(publicKey);
     const drive = gdriveClient(publicKey, token);
 
     const listGoogleTakeouts = drive.files.list({
@@ -127,33 +127,33 @@ function listDumps(publicKey, token) {
         orderBy: 'modifiedTime desc',
     });*/
 
-    return Promise.all([listGoogleTakeouts]).then((r) => {
-        const takeouts = r[0];
-        //const dumps = r[1];
+    //const r = await Promise.all([listGoogleTakeouts]);
+    //const takeouts = r[0];
 
-        let fileMapper = function(r) {
-            r.source = "gdrive";
-            r.size = parseInt(r.size);
-            r.rawReqArgs = {
-                url: "https://www.googleapis.com/drive/v3/files/" + r.id + "?alt=media",
-                headers: {
-                    "Authorization": "Bearer " + token.access_token,
-                },
-                size: r.size,
-            };
+    const takeouts = await listGoogleTakeouts;
 
-            return r;
+    let fileMapper = function(r) {
+        r.source = "gdrive";
+        r.size = parseInt(r.size);
+        r.rawReqArgs = {
+            url: "https://www.googleapis.com/drive/v3/files/" + r.id + "?alt=media",
+            headers: {
+                "Authorization": "Bearer " + token.access_token,
+            },
+            size: r.size,
         };
 
-        const res = [];
-        for (let v of takeouts.data.files) {
-            v = fileMapper(v);
-            v.provider = "google";
-            res.push(v);
-        }
-        //res.push(...dumps.data.files.map(fileMapper));
-        return res;
-    });
+        return r;
+    };
+
+    const res = [];
+    for (let v of takeouts.data.files) {
+        v = fileMapper(v);
+        v.provider = "google";
+        res.push(v);
+    }
+    //res.push(...dumps.data.files.map(fileMapper));
+    return res;
 }
 
 module.exports.router = router;

@@ -1,30 +1,3 @@
-$("#clear_identity").on("click", function() {
-    const resp = prompt("This action CANNOT be undone. Type 'yes' if you are sure.");
-
-    if (resp != "yes") {
-        return;
-    }
-
-    const sess = currentSession();
-    $.ajax({
-        method: "POST",
-        url: "/api/session/clear"
-    }).then(() => {
-        deleteBox(sess.username, sess.passHash).then(logout);
-        window.location.href = "/login/";
-    });
-
-    return false;
-});
-
-$("#link_gdrive").on("click", function() {
-    window.location.href = "/api/storage/gdrive/link/";
-});
-
-$("#logout").on("click", () => {
-    logout();
-});
-
 function doLogin() {
     const {userSeed, box} = currentSession();
     let idty = openBox(box, userSeed);
@@ -61,7 +34,26 @@ const vue = new Vue({
         },
         revokeClient: function(clientID) {
             window.location.href = "/client/revoke/?client=" + clientID;
-        }
+        },
+        clear_identity: function() {
+            const resp = prompt("This action CANNOT be undone. Type 'yes' if you are sure.");
+
+            if (resp != "yes") {
+                return;
+            }
+
+            const sess = currentSession();
+            $.ajax({
+                method: "POST",
+                url: "/api/session/clear"
+            }).then(() => {
+                deleteBox(sess.username, sess.passHash).then(logout);
+                window.location.href = "/login/";
+            });
+        },
+        logout: function() {
+            logout();
+        },
     },
 });
 
@@ -76,10 +68,12 @@ function run() {
     const {userSeed, box} = sess;
 
     const idty = openBox(box, userSeed);
+    const authzURL = new URL(idty.bind.body.origin);
+    console.log(authzURL);
     vue.idty = {
         username: idty.username,
-        alias: idty.username + "@" + idty.bind.body.domain,
-        anonymousAlias: sodium.to_hex(idty.bind.signer) + "@" + idty.bind.body.domain,
+        alias: idty.username + "@" + authzURL.hostname,
+        anonymousAlias: sodium.to_hex(idty.bind.signer) + "@" + authzURL.hostname,
         publicKey: sodium.to_base64(idty.sign.publicKey),
     };
 

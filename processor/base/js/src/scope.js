@@ -16,6 +16,11 @@ class Scope {
         this.fields = scope.fields || null;
     }
 
+    filter(col) {
+        return col.filter(this.match.bind(this)).map(this.mapFields.bind(this));
+    }
+
+
     match(e) {
         for (const pred of this.predicates) {
             const op = pred[0];
@@ -32,7 +37,7 @@ class Scope {
         return true;
     }
 
-    filterFields(e) {
+    mapFields(e) {
         if (this.fields == null) {
             return e;
         }

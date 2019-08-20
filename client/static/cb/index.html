@@ -14,6 +14,18 @@
                 font-family: 'Roboto', sans-serif;
             }
 
+            .raw {
+                font-size: 80%;
+            }
+
+            .status {
+                color: gray;
+            }
+
+            .error {
+                color: red;
+            }
+
         </style>
     </head>
 
@@ -30,53 +42,35 @@
 
             <div v-if="grant">
                 <ul>
+                    <li>Hash: <code>{{ grantHash }}</code></li>
                     <li>Signer: <code>{{ grantJSON.signer.__bytes }}@{{ bind.body.domain }}</code></li>
                     <li>Date: {{ grant.date }}</li>
                     <li>Scopes: <ul>
                         <li v-for="s in grant.body.scopes"><code>{{ s }}</code></li>
                     </ul></li>
                 </ul>
+
+                <h2>Data</h2>
+                <div v-if="dataError == null && data == null" class="status">
+                    Waiting for authorization server to fetch data. This may be
+                    long...
+                </div>
+
+                <div v-if="dataError != null" class="error">
+                    {{ dataError }}
+                </div>
+
+                <div v-if="data != null">
+                    <button v-on:click="refresh(true)">Refresh data</button>
+                    <h3>Listing</h3>
+                    <pre><span v-for="fn in data.resources"><a :href="fileURL(fn)">{{fn}}</a><br /></span></pre>
+                </div>
+
+
                 <h2>Raw</h2>
-                <pre>{{ grantJSON }}</pre>
+                <pre class="raw">{{ grantJSON }}</pre>
             </div>
         </div>
-        <script type="application/javascript">
-const chain = new Anychain();
-
-function run() {
-    let data = {};
-
-    const selfUrl = new URL(window.location.href);
-
-    data.error = selfUrl.searchParams.get('error');
-    if (data.error) {
-        data.title = "👎 Grant denied";
-
-    } else {
-        const token = selfUrl.searchParams.get('code');
-        const bindToken = selfUrl.searchParams.get('bind');
-
-        data.grant = chain.fromToken(token);
-        data.bind = chain.fromToken(bindToken);
-
-        try {
-            chain.verify(data.grant);
-            chain.verify(data.bind);
-            data.forged = false;
-            data.title = "👍 Granted";
-        } catch(e) {
-            data.forged = true;
-            data.title = "🛑 token is forged";
-        }
-
-        data.grantJSON = chain.toJSON(data.grant);
-    }
-
-    let vue = new Vue({
-        el: "#body",
-        data: data,
-    });
-}
-        </script>
+        <script type="application/javascript" src="index.js"></script>
     </body>
 </html>

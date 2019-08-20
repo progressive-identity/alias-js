@@ -12,6 +12,15 @@ async function getGrants(publicKey) {
     return grants;
 }
 
+async function getGrantRevocation(grant) {
+    const publicKey = grant.signer;
+    const grantHash = chain.fold(grant).base64();
+
+
+    const rev = await redis.db.hget(redis.key("user", grant.signer, "revs"), grantHash);
+    return rev;
+}
+
 router.post('/new', authed, (req, res) => {
     try {
         var grant = chain.fromJSON(req.body);
@@ -67,4 +76,5 @@ router.get('/list', authed, (req, res) => {
 });
 
 module.exports.getGrants = getGrants;
+module.exports.getGrantRevocation = getGrantRevocation;
 module.exports.router = router;

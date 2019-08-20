@@ -8,7 +8,7 @@ __fakedirname = "/alias/processor/base/js/src";
 const alias = require(path.join(__fakedirname, 'alias.js'));
 
 // XXX
-const processors = require(path.join(__fakedirname, '../../../providers', 'all.js'));
+const processorRouter = require(path.join(__fakedirname, '../../../providers', 'all.js'));
 
 class ProcessorApi {
     constructor(pushURL, outs) {
@@ -34,7 +34,7 @@ class ProcessorApi {
 
     out_archive(path) {
         if (!(path in this._outs)) {
-            const url = this._pushURL + "/" + path + ".tgz";
+            const url = this._pushURL + "/" + path + ".tar.gz";
             const fh = new alias.file.UrlWriterSync(url);
             const archive = new alias.TarGzArchiveWriter(fh);
             this._outs[path] = {mode: 'archive', archive: archive};
@@ -55,45 +55,35 @@ class Handlers {
         this.outs = {};
     }
 
-    ping(args) {
+    async ping(args) {
         return args;
     }
 
-    process_and_exit(args) {
+    async process_and_exit(args) {
         const stepCount = 16;
 
         // Parse scopes and define watchers
-        let providers = {};
-        let watchers = {};
-        args.scopes.forEach((scope) => {
+        const processors = {};
+        const p_api = new ProcessorApi(args.pushURL, this.outs);
+        const w = new alias.Watchers();
+
+        for (let scope of args.scopes) {
             scope = new alias.Scope(scope);
 
-            // Load lazily provider
-            const name = scope.provider;
-            if (!(name in providers)) {
-                const provider = processors.get(name);
-                if (!provider) {
-                    throw "unknown provider " + name;
+            // Load lazily processor
+            const provider = scope.provider;
+            if (!(provider in processors)) {
+                const processor = processorRouter.get(provider);
+                if (!processor) {
+                    throw "unknown provider " + provider;
                 }
 
-                providers[name] = provider;
+                processors[provider] = processor;
             }
-            const provider = providers[name];
+            const processor = processors[provider];
 
-            // Add all watchers
-            const re = new RegExp(scope.path);
-            for (let k in provider) {
-                if (k.match(re)) {
-                    watchers[name + "." + k] = provider[k](scope);
-                }
-            }
-        });
-
-        // Create initial watcher
-        let p_api = new ProcessorApi(args.pushURL, this.outs);
-        let w = new alias.Watchers();
-        for (const path in watchers) {
-            watchers[path](w, p_api);
+            // Add all handlers
+            processors[provider].process(scope, w, p_api);
         }
 
         // Create readers
@@ -113,6 +103,8 @@ class Handlers {
         inp.watch(w);
         while (inp.step(stepCount)) {
             this._notify_progress(inp.progress());
+
+            await Promise.resolve();    // one hop
         }
 
         // Processing is finished
@@ -161,7 +153,7 @@ class Handlers {
 
 const handlers = new Handlers();
 
-onmessage = function (ev) {
+onmessage = async ev => {
     const data = ev.data;
     try {
         if (data.method.startsWith("_")) {
@@ -173,7 +165,7 @@ onmessage = function (ev) {
             throw "unknown method: " + data.method;
         }
 
-        const res = handler.bind(handlers)(data.data);
+        const res = await handler.bind(handlers)(data.data);
 
         postMessage({
             id: data.id,
@@ -186,6 +178,5 @@ onmessage = function (ev) {
             error: e
         });
     }
-}
-
+};
 

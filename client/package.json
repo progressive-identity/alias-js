@@ -9,6 +9,8 @@
         "express-promise-router": "^3.0.3",
         "libsodium-wrappers": "^0.7.5",
         "morgan": "^1.9.1",
+        "node-fetch": "^2.6.0",
+        "node-mime": "^1.0.0",
         "rimraf": "^2.7.0"
     },
     "scripts": {

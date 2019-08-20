@@ -35,7 +35,7 @@ function createIdentity(username) {
 
     let bind = {
         type: "alias.bindAuthz",
-        domain: selfURL.hostname,
+        origin: selfURL.origin,
     };
     idty.bind = chain.sign(idty.sign, bind);
 

@@ -27,15 +27,15 @@ app.get('/alias/', cors(), (req, res) => {
 
 const storage = require('./storage.js');
 const processing = require('./processing.js');
-const grant = require('./grant.js');
+const grants = require('./grant.js');
 
 app.use("/api/user", require('./userHandlers.js'));
 app.use("/api/session", require('./sessionHandlers.js'));
-app.use("/api/grant", grant.router);
+app.use("/api/grant", grants.router);
 app.use("/api/storage", storage.router);
 
 app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
-    const grantByID = await grant.getGrants(req.alias.publicKey);
+    const grantByID = await grants.getGrants(req.alias.publicKey);
     const clientByID = {};
 
     // provider > path > app > grant
@@ -70,7 +70,7 @@ app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
 
 app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) => {
     const clientID = req.params.clientID;
-    const grantByID = await grant.getGrants(req.alias.publicKey);
+    const grantByID = await grants.getGrants(req.alias.publicKey);
     let client = null;
 
     // app > grant
@@ -96,74 +96,79 @@ app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) =
     }));
 }));
 
-app.post("/alias/process", (req, res) => {
-    (async () => {
-        try {
-            var grant = chain.fromJSON(req.body);
-            if (!chain.isSignature(grant) || grant.body.type != "alias.grant") {
-                throw "expect a token 'alias.grant'";
-            }
-        } catch(e) {
-            return res.status(400).send({status: "error", reason: e});
+app.post("/alias/process", asyncMiddleware(async (req, res) => {
+    try {
+        var grant = chain.fromJSON(req.body);
+        if (!chain.isSignature(grant) || grant.body.type != "alias.grant") {
+            throw "expect a token 'alias.grant'";
         }
 
-        // get mapping provider => dumps
-        const dumpsByProvider = await storage.getDumps(grant.signer);
-
-        // list scopes by providers
-        const scopesByProvider = {};
-        for (const scope of grant.body.scopes) {
-            const provider = scope.provider;
-            scopesByProvider[provider] = scopesByProvider[provider] || [];
-            scopesByProvider[provider].push(scope);
+        const rev = await grants.getGrantRevocation(grant);
+        if (rev) {
+            throw "revoked";
         }
 
-        const grantBase64 = chain.fold(grant).base64();
-        const pushURL = grant.body.contract.client.body.pushURL + grantBase64;
+    } catch(e) {
+        return res.status(400).send({status: "error", reason: e});
+    }
 
-        await fetch(pushURL, {
-            method: 'PUT',
-            body: chain.toToken(grant),
-            headers: {
-                "Content-Type": "application/json",
-            }
-        })
 
-        const processingCmds = [];
-        for (const provider in scopesByProvider) {
-            const scopes = scopesByProvider[provider];
-            const dumps = dumpsByProvider[provider];
+    // get mapping provider => dumps
+    const dumpsByProvider = await storage.getDumps(grant.signer);
 
-            if (!dumps) {
-                continue;
-            }
+    // list scopes by providers
+    const scopesByProvider = {};
+    for (const scope of grant.body.scopes) {
+        const provider = scope.provider;
+        scopesByProvider[provider] = scopesByProvider[provider] || [];
+        scopesByProvider[provider].push(scope);
+    }
 
-            const processArgs = {
-                // XXX return only the most recent dump
-                inp: [dumps[0]].map(d => d.rawReqArgs),
-                pushURL: pushURL,
-                scopes: scopes,
-                contract: chain.toJSON(chain.fold(grant.body.contract))
-            };
+    const grantHash = chain.fold(grant).base64();
+    const pushURL = grant.body.contract.client.body.pushURL + grantHash;
 
-            processingCmds.push(processArgs);
+    await fetch(pushURL, {
+        method: 'PUT',
+        body: chain.toToken(grant),
+        headers: {
+            "Content-Type": "application/json",
+        }
+    })
+
+    const processingCmds = [];
+    for (const provider in scopesByProvider) {
+        const scopes = scopesByProvider[provider];
+        const dumps = dumpsByProvider[provider];
+
+        if (!dumps) {
+            continue;
         }
 
-        const process = processingCmds.map(processing.process);
-        try {
-            var allProcess = await Promise.all(process);
-        } catch(e) {
-            return res.status(400).send({status: "error", reason: e});
-        }
+        const processArgs = {
+            // XXX return only the most recent dump
+            inp: [dumps[0]].map(d => d.rawReqArgs),
+            pushURL: pushURL,
+            scopes: scopes,
+            contract: chain.toJSON(chain.fold(grant.body.contract))
+        };
 
-        await fetch(pushURL, {
-            method: 'POST',
-            body: {"finished": true},
-        });
+        processingCmds.push(processArgs);
+    }
 
-        return res.json({status: 'ok'});
-    })();
-});
+    const process = processingCmds.map(processing.process);
+    try {
+        var allProcess = await Promise.all(process);
+    } catch(e) {
+        return res.status(400).send({status: "error", reason: e});
+    }
+
+    await fetch(pushURL, {
+        method: 'POST',
+        body: {"finished": true},
+    });
+
+    return res.json({status: 'ok', grantID: grantHash, processor: allProcess});
+}));
 
 app.use('/', express.static('static'))
 
