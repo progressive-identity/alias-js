@@ -1,0 +1,3 @@
+[submodule "deps/anychain-js"]
+	path = deps/anychain-js
+	url = https://github.com/progressive-identity/anychain-js.git

@@ -17,17 +17,17 @@ all: build
 
 build: build-processor build-provider build-client
 
-build-processor:
+build-processor: build-deps
 	make -C processor build
 
-build-provider: build-anychain
+build-provider: build-deps
 	make -C provider build
 
-build-client: build-anychain
+build-client: build-deps
 	make -C client build
 
-build-anychain:
-	make -C anychain build
+build-deps:
+	make -C deps build
 
 build-docker: build
 	make -C processor/daemon build-docker
@@ -43,7 +43,7 @@ check:
 clean:
 	make -C client clean
 	make -C provider clean
-	make -C anychain clean
+	make -C deps clean
 	make -C processor clean
 	rm -rf root
 
