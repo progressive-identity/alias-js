@@ -1,16 +1,19 @@
-.PHONY: all build clean run build-docker
-
+.PHONY: all
 all: build
 
+.PHONY: build
 build:
 	npm install
 
+.PHONY: run
 run:
 	npm start
 
+.PHONY: clean
 clean:
 	rm -rf node_modules
 
+.PHONY: build-docker
 build-docker:
 	$(eval TMP := $(shell mktemp -d))
 	cp -Lr Dockerfile node_modules app.js $(TMP)

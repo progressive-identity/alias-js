@@ -1,45 +1,40 @@
-#.PHONY: all build check build-nodejs build-web build-docker clean serve-client run npm-install clean-files build-docker serve
-.PHONY: \
-	all \
-	build \
-	build-client \
-	build-processor \
-	build-docker \
-	build-docker-sandbox \
-	check \
-	run \
-	run-client-server \
-	run-processor-daemon \
-	run-provider-server \
-	run-sandbox
-
+.PHONY: all
 all: build
 
+.PHONY: build
 build: build-processor build-provider build-client
 
+.PHONY: build-processor
 build-processor: build-deps
 	make -C processor build
 
+.PHONY: build-provider
 build-provider: build-deps
 	make -C provider build
 
+.PHONY: build-client
 build-client: build-deps
 	make -C client build
 
+.PHONY: build-deps
 build-deps:
 	make -C deps build
 
+.PHONY: build-docker
 build-docker: build
 	make -C processor/daemon build-docker
 	make -C provider build-docker
 	make -C client build-docker
 
+.PHONY: build-docker-sandbox
 build-docker-sandbox:
 	docker build -t alias/sandbox -f docker/Dockerfile .
 
+.PHONY: check
 check:
 	make -C processor check
 
+.PHONY: clean
 clean:
 	make -C client clean
 	make -C provider clean
@@ -49,19 +44,24 @@ clean:
 
 ### Debug run shortcuts
 
+.PHONY: run
 run:
 	docker-compose -f docker/docker-compose.yml up
 
 # set listening port with env var ALIAS_PROCESSOR_DAEMON_PORT
+.PHONY: run-processor-daemon
 run-processor-daemon:
 	make -C processor/daemon run
 
+.PHONY: run-client-server
 run-client-server:
 	make -C client run
 
 # set listening port with env var ALIAS_AUTHZ_PORT
+.PHONY: run-provider-server
 run-provider-server:
 	make -C provider run
 
+.PHONY: run-sandbox
 run-sandbox:
 	docker run -it --rm -v `pwd`:/alias alias/sandbox /bin/bash
