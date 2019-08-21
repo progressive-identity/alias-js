@@ -42,6 +42,14 @@ clean:
 	make -C processor clean
 	rm -rf root
 
+.PHONY: build-docker-builder
+build-docker-builder:
+	docker build -t alias/builder -f docker/Dockerfile.builder docker
+
+.PHONY: build-inside-docker
+build-inside-docker:
+	docker run --rm -it -v `pwd`:/pwd alias/builder /usr/bin/make -C /pwd
+
 ### Debug run shortcuts
 
 .PHONY: run
