@@ -1,9 +1,12 @@
+#![feature(bufreader_seek_relative)]
+
 mod anychain;
 mod archive;
 mod jsfile;
 mod jsreader;
 mod probe_reader;
 mod raw_writer;
+mod seekable_bufreader;
 mod utils;
 mod wasm;
 

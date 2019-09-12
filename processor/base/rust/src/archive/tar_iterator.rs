@@ -238,7 +238,7 @@ where
         }
     }
 
-    pub fn path(&self) -> io::Result<Cow<Path>> {
+    pub fn path(&mut self) -> io::Result<Cow<Path>> {
         bytes2path(self.path_bytes())
     }
 
@@ -294,13 +294,13 @@ where
     fn next(&mut self) -> io::Result<Option<()>> {
         self.next()
     }
-    fn path(&self) -> io::Result<Cow<Path>> {
+    fn path(&mut self) -> io::Result<Cow<Path>> {
         self.path()
     }
     fn as_read_mut(&mut self) -> &mut Read {
         self
     }
-    fn size(&self) -> io::Result<u64> {
+    fn size(&mut self) -> io::Result<u64> {
         self.header.as_ref().unwrap().size()
     }
 }

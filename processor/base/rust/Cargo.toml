@@ -11,15 +11,15 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
+bincode = "1.1.4"
 console_log = "0.1.2"
 conv = "0.3.3"
 flate2 = "1.0.7"
 futures = "0.1.27"
 log = "0.4.6"
 tar = "0.4.26"
-zip = { version = "0.5.2", default-features = false, features = ["deflate", "time"] }   # bzip2 not compilable with WASM
-#serde = { version = "1.0.94", features = [ "derive" ] }
-#serde_derive = "1.0.94"
+zip = { version = "0.5.3", default-features = false, features = ["deflate", "time"] }   # bzip2 not compilable with WASM
+serde = { version = "1.0.99", features = [ "derive" ] }
 ed25519 = { package="ed25519-dalek", version = "1.0.0-pre.1" }
 # anychain
 blake2b = { package = "blake2b_simd", version = "0.5.3" }
@@ -33,7 +33,7 @@ console_error_panic_hook = { version = "0.1.1", optional = true }
 wee_alloc = { version = "0.4.2", optional = true }
 js-sys = "0.3.23"
 #web-sys = { version = "0.3.23", features = [ "Blob", "FileReaderSync" ] }
-wasm-bindgen = { version = "0.2" } #, features = [ "serde-serialize" ] }
+wasm-bindgen = { version = "0.2.50" } #, features = [ "serde-serialize" ] }
 wasm-bindgen-futures = "0.3.23"
 
 [dev-dependencies]

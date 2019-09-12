@@ -49,6 +49,7 @@ module.exports.Processor = require("./processor.js").Processor;
 module.exports.RawWriter = wasm.RawWriter;
 module.exports.Scope = require("./scope.js").Scope;
 module.exports.TarGzArchiveReader = wasm.TarGzArchiveReader;
+module.exports.ZipArchiveReader = wasm.ZipArchiveReader;
 module.exports.TarGzArchiveWriter = wasm.TarGzArchiveWriter;
 module.exports.Watchers = wasm.JsWatchers;
 module.exports.WatchersWrapper = _WatchersWrapper;

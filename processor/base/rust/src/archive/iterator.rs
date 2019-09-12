@@ -6,8 +6,8 @@ use std::*;
 
 pub trait ArchiveIterator: Read {
     fn next(&mut self) -> io::Result<Option<()>>;
-    fn path(&self) -> io::Result<Cow<Path>>;
-    fn size(&self) -> io::Result<u64>;
+    fn path(&mut self) -> io::Result<Cow<Path>>;
+    fn size(&mut self) -> io::Result<u64>;
 
     // XXX currently, trait upcasting is not possible. When so, remove this.
     // See https://github.com/rust-lang/rust/pull/60900
