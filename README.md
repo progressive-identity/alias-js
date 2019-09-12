@@ -3,15 +3,20 @@
 This repository contains the minimal toolkit to use Alias or install its
 servers.
 
-## Getting started
-
 ⚠️ Still WIP
 
-You'll need `node`, `npm`, `rust`, `rust-wasmbindgen` installed.
+## Getting started
 
+Build the project inside a Docker container:
 
 ```bash
-make build
+make build-docker-builder
+make build-inside-docker
+```
+
+Run the project
+
+```bash
 make build-docker-sandbox
 make run
 ```
