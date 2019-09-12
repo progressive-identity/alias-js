@@ -28,6 +28,7 @@ app.get('/alias/', cors(), (req, res) => {
 const storage = require('./storage.js');
 const processing = require('./processing.js');
 const grants = require('./grant.js');
+const history = require('./history.js');
 
 app.use("/api/user", require('./userHandlers.js'));
 app.use("/api/session", require('./sessionHandlers.js'));
@@ -36,6 +37,7 @@ app.use("/api/storage", storage.router);
 
 app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
     const grantByID = await grants.getGrants(req.alias.publicKey);
+    const hist = await history.getHistoryRange(req.alias.publicKey, 0, -1);
     const clientByID = {};
 
     // provider > path > app > grant
@@ -63,6 +65,7 @@ app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
         grants: grantByID,
         clients: clientByID,
         view: viewModel,
+        history: hist,
     };
 
     res.json(chain.toJSON(r));

@@ -65,7 +65,12 @@
                     <button v-if="enabled" v-on:click="storageUnlink(storageProvider)">Unlink your {{ storageProvider }}</button>
                 </span>
             </div>
-            <ul></ul>
+
+            <div v-if="history">
+                <h2>History</h2>
+                <pre><span v-for="o in history">{{o['date']}}: <b><code>{{o.body.type}}</code></b> <a :href="'/order/?code=' + orderToken(o)"><code>{{orderID(o)}}</code></a>
+</span></pre>
+            </div>
         </div>
 
         <script type="application/javascript" src="index.js"></script>

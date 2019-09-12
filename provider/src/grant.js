@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {authed} = require('./utils.js');
 const redis = require('./redis.js');
+const history = require('./history.js');
 
 async function getGrants(publicKey) {
     const grantTokens = await redis.db.hgetall(redis.key("user", publicKey, "grants"));
@@ -15,7 +16,6 @@ async function getGrants(publicKey) {
 async function getGrantRevocation(grant) {
     const publicKey = grant.signer;
     const grantHash = chain.fold(grant).base64();
-
 
     const rev = await redis.db.hget(redis.key("user", grant.signer, "revs"), grantHash);
     return rev;
@@ -33,14 +33,38 @@ router.post('/new', authed, (req, res) => {
 
     var grantHash = chain.fold(grant).base64();
 
-    redis.db.hset(
-        redis.key("user", req.alias.publicKey, "grants"),
-        grantHash,
-        chain.toToken(grant)
-    ).then(() => {
-        res.json({});
-    });
+    redis.db.pipeline()
+        .hset(
+            redis.key("user", req.alias.publicKey, "grants"),
+            grantHash,
+            chain.toToken(grant)
+        )
+        .lpush(redis.key("user", req.alias.publicKey, "history"), chain.toToken(grant))
+        .exec()
+        .then(() => {
+            res.json({});
+        })
+    ;
 });
+
+async function propagateRevocation(publicKey, grantHash) {
+    let grant = await redis.db.hget(redis.key("user", publicKey, "grants"), grantHash);
+    grant = chain.fromToken(grant);
+    const pushURL = grant.body.contract.client.body.pushURL + grantHash;
+
+    await fetch(pushURL, {
+        method: 'PUT',
+        body: chain.toToken(grant),
+        headers: {
+            "Content-Type": "application/json",
+        }
+    })
+
+    await fetch(pushURL, {
+        method: 'POST',
+        body: {"finished": true},
+    });
+}
 
 router.post('/revoke', authed, (req, res) => {
     try {
@@ -54,17 +78,21 @@ router.post('/revoke', authed, (req, res) => {
 
     var grantHash = chain.fold(revoke.body.grant).base64();
 
-    redis.db.pipeline()
-        .hdel(
-            redis.key("user", req.alias.publicKey, "grants"),
-            grantHash,
-        )
-        .hset(
-            redis.key("user", req.alias.publicKey, "revs"),
-            grantHash,
-            chain.toToken(revoke),
-        )
-        .exec()
+    propagateRevocation(req.alias.publicKey, grantHash)
+        .then(() => {
+            return redis.db.pipeline()
+            .hdel(
+                redis.key("user", req.alias.publicKey, "grants"),
+                grantHash,
+            )
+            .hset(
+                redis.key("user", req.alias.publicKey, "revs"),
+                grantHash,
+                chain.toToken(revoke),
+            )
+            .lpush(redis.key("user", req.alias.publicKey, "history"), chain.toToken(revoke))
+            .exec();
+        })
         .then(() => {
             res.json({});
         })

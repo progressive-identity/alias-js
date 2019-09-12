@@ -1,0 +1,85 @@
+<html>
+    <head>
+        <title>📋 Alias - Order</title>
+
+
+        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="/header.js"></script>
+        <script type="application/javascript" src="/sodium.js"></script>
+        <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/alias.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <style>
+            html, body {
+                font-family: 'Roboto', sans-serif;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <div id="vue" v-if="o">
+            <h1>📋 Order <code>{{o.body.type}}</code></h1>
+
+            <ul>
+                <li>ID: <code>{{id}}</code></li>
+                <li>Signer's public key: <code>{{toBase64(o.signer)}}</code></li>
+                <li>Date: <code>{{o.date}}</code></li>
+            </ul>
+
+            <div v-if="o.body.type == 'alias.grant'">
+                <h2>Grant</h2>
+                <ul>
+                    <li>Scopes: <ul><li v-for="scope in o.body.scopes"><code>{{ formatScope(scope) }}</code> ({{scope.base}})</li></ul></li>
+                </ul>
+
+                <h3>Contract</h3>
+                <ul>
+                    <li>Usage: {{ o.body.contract.legal.usage }}</li>
+                    <li>Terms of service: <a :href="o.body.contract.legal.tos_url" target="_blank">{{o.body.contract.legal.tos_url}}</a></li>
+                    <li>DPO's email: <a :href="'mail:' + o.body.contract.legal.email_dpo">{{o.body.contract.legal.email_dpo}}</a></li>
+                    <li>Your data: <ul>
+                        <li><verb :value="true">will</verb> be shared with <em>{{o.body.contract.client.body.name}}</em>
+                        <span v-if="o.body.contract.legal && o.body.contract.legal.destination">
+                            and <em v-for="(t, idx) in o.body.contract.legal.destination">{{t}}<span v-if="idx+1 < o.body.contract.legal.destination.length">, </span></em></span>;</li>
+                        <li v-if="o.body.contract.legal.storage_duration"><verb :value="true">will</verb> be stored {{o.body.contract.legal.storage_duration}};</li>
+
+
+                        <li><verb :value="o.body.contract.legal.transfer_outside_eea">will</verb> be transferred outside the European Economic Area (EEA);</li>
+                        <li><verb :value="o.body.contract.legal.evaluation_notation_rating_profiling">will</verb> be used for evaluation, notation, rating, or for proling activities;</li>
+                        <li><verb :value="o.body.contract.legal.automated_decision">will</verb> be used to generate au automated decision about you;</li>
+                        <li><verb :value="o.body.contract.legal.automated_surveillance">has</verb> an automated surveillance attached;</li>
+                        <li><verb :value="o.body.contract.legal.mixing_reasonable_expectations">will</verb> be crossed or mixed beyond reasonnable expectations;</li>
+                        <li><verb :value="o.body.contract.legal.innovative_reasonable_expectations">will</verb> be used in a innovative way, or from innovative technologies or innovative organizationnal systems beyond reasonnable expectations;</li>
+                    </ul></li>
+                </ul>
+
+                <h3>Client</h3>
+                <ul>
+                    <li>Name: <a :href="o.body.contract.client.body.url" target="_blank">{{o.body.contract.client.body.name}}</a></li>
+                    <li>Description: {{o.body.contract.client.body.desc}}</li>
+                </ul>
+            </div>
+
+            <div v-if="o.body.type == 'alias.revokeGrant'">
+                <h2>Revocation</h2>
+                <ul>
+                    <li>Revoked order: <code>{{orderID(o.body.grant)}}</code></li>
+                </ul>
+            </div>
+
+            <div v-if="o.body.type == 'alias.bindAuthz'">
+                <h2>Bind</h2>
+                <ul>
+                    <li>Declared authorization server: <code><a :href="o.body.origin">{{o.body.origin}}</a></code></li>
+                </ul>
+            </div>
+
+            <h2>Raw</h2>
+            <pre>{{toJSON(o)}}</pre>
+        </div>
+
+        <script type="application/javascript" src="index.js"></script>
+    </body>
+</html>

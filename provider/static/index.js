@@ -12,8 +12,15 @@ const vue = new Vue({
         grants: null,
         clients: null,
         view: null,
+        history: null,
     },
     methods: {
+        orderID: function(o) {
+            return chain.fold(o).base64();
+        },
+        orderToken: function(o) {
+            return encodeURIComponent(chain.toToken(o));
+        },
         storageLink: function(provider) {
             window.location.href = "/api/storage/" + provider + "/link/";
 
@@ -81,6 +88,8 @@ function run() {
         vue.grants = r.grants;
         vue.clients = r.clients;
         vue.view = r.view;
+        r.history.push(chain.toJSON(idty.bind));    // XXX
+        vue.history = r.history.map((v) => chain.fromJSON(v));
     }).catch((e) => {
         if (e.status == 401) {
             window.location.href = "/login";
