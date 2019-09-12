@@ -175,5 +175,5 @@ app.use('/', express.static('static'))
 sodium.ready.then(() => {
     const listenPort = config.http.listenPort || 8080;
 
-    app.listen(listenPort, () => console.log(`Example app listening on port ${listenPort}!`))
+    app.listen(listenPort, () => console.log(`Listening on port ${listenPort}!`))
 });

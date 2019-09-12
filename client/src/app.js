@@ -91,6 +91,6 @@ const {asyncMiddleware} = require('./utils.js');
     }));
 
     app.use('/', express.static('static'));
-    app.listen(listenPort, () => console.log(`Example app listening on port ${listenPort}!`))
+    app.listen(listenPort, () => console.log(`Listening on port ${listenPort}!`))
 
 })();
