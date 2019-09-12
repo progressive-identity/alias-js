@@ -1,1 +1,1 @@
-../../anychain/js/anychain.js
+../../deps/anychain-js/anychain.js
