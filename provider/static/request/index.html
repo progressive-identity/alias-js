@@ -24,7 +24,7 @@
         #popup {
             display: none;
             background-color: white;
-            width: 550px;
+            width: 650px;
             border: 1px solid #ccd6dd;
             border-radius: 4px;
             padding: 20px;
@@ -66,37 +66,62 @@
     <html>
         <div id="popup">
         <div id="popup-content">
-            <p class="title">🔒 <em>{{ c.client.body.name }}</em> is requesting
+            <p class="title">🔒 <em>{{ c.client.body.name }}</em>, from <em>{{ c.client.body.company }}</em>, is requesting
             access to your data</p>
 
             <blockquote class="usage" v-if="c.legal && c.legal.usage">
-                {{ c.legal.usage }}
+                <p>{{ c.legal.usage }}</p>
             </blockquote>
+
 
             <p>This application will access to the following data:</p>
             <ul>
-                <li v-for="scope in scopes">
+                <li v-for="scope in scopes.contractual">
                     <code>{{ formatScope(scope) }}</code>
                 </li>
             </ul>
 
-            <div v-if="consentScopes.length > 0">
+            <div v-if="scopes.legitimate.length > 0">
+                <p>This application also request a legitimate access to the following data:</p>
+                <ul>
+                    <li v-for="scope in scopes.legitimate">
+                        <code>{{ formatScope(scope) }}</code>
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="scopes.consent.length > 0">
                 <p>To fulfill the request,</p>
                 <ul>
-                <li v-for="(scope, i) in consentScopes">
+                <li v-for="(scope, i) in scopes.consent">
                     Do you also consent to share data scoped <code>{{
                         formatScope(scope) }}</code>?
-                    <input type="radio" v-model="consent[i]" :value="true">Yes
-                    <input type="radio" v-model="consent[i]" :value="false">No
+                    <input type="radio" v-model="scopes.consent[i].agree" :value="true">Yes
+                    <input type="radio" v-model="scopes.consent[i].agree" :value="false">No
                 </li>
                 </ul>
             </div>
 
-            <p>Your data will be shared with <em>{{c.client.body.name}}</em>
-                <span v-if="c.legal && c.legal.third">
-                    and <em v-for="t in c.legal.third">{{t}}</em>
-                </span>
-            .</p>
+            <p>Your data:</p>
+
+            <ul>
+                <li><verb :value="true">will</verb> be shared with <em>{{c.client.body.name}}</em>
+                <span v-if="c.legal && c.legal.destination">
+                    and <em v-for="(t, idx) in c.legal.destination">{{t}}<span v-if="idx+1 < c.legal.destination.length">, </span></em></span>;</li>
+                <li v-if="c.legal.storage_duration"><verb :value="true">will</verb> be stored {{c.legal.storage_duration}};</li>
+
+
+                <li><verb :value="c.legal.transfer_outside_eea">will</verb> be transferred outside the European Economic Area (EEA);</li>
+                <li><verb :value="c.legal.evaluation_notation_rating_profiling">will</verb> be used for evaluation, notation, rating, or for proling activities;</li>
+                <li><verb :value="c.legal.automated_decision">will</verb> be used to generate au automated decision about you;</li>
+                <li><verb :value="c.legal.automated_surveillance">has</verb> an automated surveillance attached;</li>
+                <li><verb :value="c.legal.mixing_reasonable_expectations">will</verb> be crossed or mixed beyond reasonnable expectations;</li>
+                <li><verb :value="c.legal.innovative_reasonable_expectations">will</verb> be used in a innovative way, or from innovative technologies or innovative organizationnal systems beyond reasonnable expectations;</li>
+            </ul>
+
+            <p><a v-if="c.legal.tos_url" :href="c.legal.tos_url" target="_blank">Privacy policy</a> - <a :href="'mail:' + c.legal.email_dpo">Contact the DPO office</a></p>
+
+            <p>You have the right to access, modify, transfer or delete the data you have collected on them, as per the law.</p>
 
             <button v-on:click="agree">I agree</button>
             <button v-on:click="deny">I deny</button>
@@ -104,10 +129,7 @@
             <p><a href="#" id="advanced" v-on:click="toggleAdvanced">Advanced</a></p>
             <div id="advanced-info" v-show="showAdvanced">
                 <p>
-                    Your key: <code>{{userPublicKey}}</code><br />
-                    Contract ID: <code>{{cId}}</code><br />
-                    Requester's key: <code>{{clientSignerH}}</code><br />
-                    Request date: <code>{{c.client.date}}</code>
+                Request date: <code>{{c.client.date}}</code>
                 </p>
             </div>
         </div>

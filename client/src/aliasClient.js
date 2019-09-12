@@ -12,6 +12,7 @@ class AliasClient {
         if (!opts.secretSeed) { throw "no secretSeed set!"; }
         if (!opts.name) { throw "no name set!"; }
         if (!opts.domain) { throw "no domain set!"; }
+        if (!opts.company) { throw "no company set!"; }
 
         opts.dataPath = opts.dataPath || "/client_data";
         opts.scheme = opts.scheme || 'https';
@@ -37,6 +38,7 @@ class AliasClient {
             desc: this.opts.desc,
             domain: this.opts.domain,
             url: this.opts.url,
+            company: this.opts.company,
             redirectURL: this.opts.redirectURL,
             pushURL: this.opts.pushURL,
             legal: this.opts.legal,

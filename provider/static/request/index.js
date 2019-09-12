@@ -1,3 +1,11 @@
+Vue.component('verb', {
+    props: ['value'],
+    data: () => { return {}; },
+    template: `
+<span v-if="value"><b style="text-transform: uppercase;"><slot></slot></b></span><span v-else-if="!value"><b style="text-transform: uppercase;"><slot></slot> NOT</b></span>
+`,
+});
+
 var vue = null;
 
 function cbReturnError(contract, error, desc, uri) {
@@ -67,21 +75,27 @@ function run() {
         cbReturnError(client, "unauthorized_client");
     };
 
-    const scopes = contract.scopes.filter((scope) => !scope.consent);
-    const consentScopes = contract.scopes.filter((scope) => scope.consent);
+    const scopesByBase = {contractual: [], consent: [], legitimate: []};
+    for (const scope of contract.scopes) {
+        if (!scopesByBase[scope.base]) {
+            console.error(`unknown scope base: ${scope.base}`);
+            continue;
+        }
 
-    let consent = [];
-    consent.length = consentScopes.length;
-    consent.fill(false);
+        scope.agree = true;
+        scopesByBase[scope.base].push(scope);
+    }
+
+    for (const scope of scopesByBase.consent) {
+        scope.agree = false;
+    }
 
     vue = new Vue({
         el: "#popup",
         data: {
             c: contract,
             cId: chain.fold(contract).base64(),
-            scopes: scopes,
-            consentScopes: consentScopes,
-            consent: consent,
+            scopes: scopesByBase,
             userPublicKey: sodium.to_base64(selfPublicKey),
             clientSignerH: sodium.to_base64(contract.client.signer),
             showAdvanced: false,
@@ -92,10 +106,13 @@ function run() {
                 this.showAdvanced = !this.showAdvanced;
             },
             agree: function() {
-                let scopes = [...this.scopes];
-                for (let i in this.consentScopes) {
-                    if (this.consent[i]) {
-                        scopes.push(this.consentScopes[i]);
+                const finalScopes = [];
+                for (const scopes of Object.values(this.scopes)) {
+                    for (const scope of scopes) {
+                        if (scope.agree) {
+                            delete scope.agree;
+                            finalScopes.push(scope);
+                        }
                     }
                 }
 
@@ -105,7 +122,7 @@ function run() {
                 let grant = {
                     type: "alias.grant",
                     contract: contract,//chain.fold(contract),
-                    scopes: scopes,
+                    scopes: finalScopes,
                 };
                 grant = chain.sign(idty.sign, grant);
 

@@ -19,8 +19,10 @@ const {asyncMiddleware} = require('./utils.js');
         redirectURL: "http://client.gdpr.dev.local/cb/",
 
         //domain: "localhost:8080",
-        name: "Common Voice",
+        name: "VoiceLabs",
         desc: "Teach machines how real people speak.",
+        url: "https://voicelabs.co/",
+        company: "VoiceLabs Inc",
 
         onNewPush: (grant) => {
             console.log("NEW GRANT", chain.toJSON(grant));
@@ -30,23 +32,37 @@ const {asyncMiddleware} = require('./utils.js');
     const contract = client.generateContract({
         scopes: [
             {
+                base: "consent",
                 provider: "google",
                 path: "my_activity.assistant",
                 predicates: [
                     [ "has", "audioFiles" ],
                 ],
-                consent: true,
             },
             {
-                provider: "google",
-                path: "my_activity.search",
+                base: "consent",
+                provider: "amazon",
+                path: "alexa",
             },
         ],
         legal: {
-            usage: "Data will be imported in the public-domain Common Voice database in order to be used as a machine learning dataset to improve public research on Voice Recognition and AI.",
-            third: [
-                "Mozilla.org, and partners involved in the Common Voice project",
-            ]
+            usage: "Data will be imported in the public-domain VoiceLabs database in order to be used as a machine learning dataset to improve public research on Voice Recognition and AI.",
+            accept_users_right_access_modify_transfer_delete: true,
+            automated_decision: false,
+            automated_surveillance: false,
+            destination: [
+              "Snips Inc",
+              "Voxist",
+              "Voicelow",
+              "Roger Voice",
+            ],
+            email_dpo: "dpo@voicelabs.co",
+            evaluation_notation_rating_profiling: false,
+            innovative_reasonable_expectations: false,
+            mixing_reasonable_expectations: false,
+            subprocessors: [],
+            tos_url: "https://voicelabs.co/tos/",
+            transfer_outside_eea: false,
         },
     });
 
