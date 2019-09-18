@@ -140,19 +140,19 @@ Vue.component("input-usages-scopes", {
     data: () => { return { }; },
     template: `
     <div>
-        <input-text-list
-            :values="values"
-            id="usages"
-            :change="change">
-            What are all the usages you will have with this data.
-        </input-text-list>
-
-        <input-scopes
+         <input-scopes
             :values="values"
             id="scopes"
             :change="change">
             What are the list of scopes under the contractual base?
         </input-scopes>
+
+       <input-text-list
+            :values="values"
+            id="usages"
+            :change="change">
+            What are all the usages you will have with this data.
+        </input-text-list>
     </div>
     `
 });
