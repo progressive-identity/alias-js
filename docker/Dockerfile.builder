@@ -13,7 +13,7 @@ ENV OPENSSL_LIB_DIR=/usr/lib \
 
 # Install rustup
 RUN curl https://sh.rustup.rs -sSf | \
-    sh -s -- --default-toolchain stable -y
+    sh -s -- --default-toolchain nightly -y
 ENV PATH=/root/.cargo/bin:$PATH
 
 # Install target wasm
