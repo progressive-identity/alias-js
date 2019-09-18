@@ -21,7 +21,7 @@ build-deps:
 	make -C deps build
 
 .PHONY: build-docker
-build-docker: build
+build-docker:
 	make -C processor/daemon build-docker
 	make -C provider build-docker
 	make -C client build-docker
