@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Alias Contract Generator</title>
+        <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="index.css">
+       <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+       <script src="sodium.js"></script>
+       <script src="anychain.js"></script>
+    </head>
+    <body>
+        <h1>Contract generator</h1>
+        <div id="vue">
+            <h2>Client</h2>
+            <div class="indent">
+                <input-text :values="client" id="secret_seed_b64" :change="change">
+                    What is your secure key?
+                </input-text>
+
+                <input-text :values="client" id="name" :change="change">
+                    What is the name of your application?
+                </input-text>
+
+                <input-text :values="client" id="desc" :change="change">
+                    What is a description of your application?
+                </input-text>
+
+                <input-text :values="client" id="url" :change="change">
+                    What is the URL of your application?
+                </input-text>
+            </div>
+
+            <h2>Contract</h2>
+
+            <div class="indent">
+                <h3>Contractual usage</h3>
+
+                <div class="indent">
+                    <input-boolean :values="session" id="contractual" :change="change">Do you want to access data under the contractual legal base?</input-boolean>
+
+                    <div v-if="session.contractual">
+                        <input-usages-scopes
+                            :values="contract.base.contractual"
+                            :change="change" />
+                    </div>
+                </div>
+
+                <h3>Consent usage</h3>
+
+                <div class="indent">
+                    <input-boolean :values="session" id="consent" :change="change">Do you want to access data under the consent legal base?</input-boolean>
+
+                    <div v-if="session.consent">
+                        <input-list-usages-scopes
+                            name="consent"
+                            :values="contract.base"
+                            id="consent"
+                            :change="change" />
+                    </div>
+                </div>
+
+                <h3>Legitimate usage</h3>
+
+                <div class="indent">
+                    <input-boolean :values="session" id="legitimate" :change="change">Do you want to access data under the legitimate legal base?</input-boolean>
+
+                    <div v-if="session.legitimate">
+                        <input-text
+                            :values="contract.base.legitimate"
+                            id="reason"
+                            :change="change">
+                            Explain why this data are under the legitimate base?
+                        </input-text>
+
+                        <input-list-usages-scopes
+                            name="legitimate"
+                            :values="contract.base.legitimate"
+                            id="groups"
+                            :change="change" />
+                    </div>
+                </div>
+
+                <h3>Legal</h3>
+
+                <div class="indent">
+                    <input-text :values="contract" id="legal_usage" :change="change">
+                        Provide in one sentence all the intended uses of the data
+                        requested.
+                    </input-text>
+
+                    <input-text :values="contract" id="legal_tos_url" :change="change">
+                        What is the URL to your User's Terms of Service?
+                    </input-text>
+
+                    <input-text :values="contract" id="email_dpo" :change="change">
+                        What is the contact email address of your company Data
+                        Protection Officer?
+                    </input-text>
+
+                    <input-text-list :values="contract" id="destination" :change="change">
+                        List all the legal entities or 3rd parties who will be
+                        destination of the data
+                    </input-text-list>
+
+                    <input-text-list :values="contract" id="subprocessors" :change="change">
+                        List all the subprocessors who will be third-party data
+                        processors
+                    </input-text-list>
+
+                    <input-text :values="contract" id="storage_duration" :change="change" optional="true">
+                        How long these data will be stored?
+                    </input-text>
+
+                    <input-boolean :values="contract" id="transfer_outside_eea" :change="change">
+                        Are these data to be transferred outside the European Economic Area (EEA)?
+                    </input-boolean>
+
+                    <input-boolean :values="contract" :change="change"
+                                                      id="evaluation_notation_rating_profiling">
+                        Are you using these data for evaluation, notation, rating, or for profiling activities?
+                    </input-boolean>
+
+                    <input-boolean :values="contract" id="automated_decision" :change="change">
+                        Are you using these data to generate an automated decision about users?
+                    </input-boolean>
+
+                    <input-boolean :values="contract" id="automated_surveillance" :change="change">
+                        Is there an automated surveillance attached to the data?
+                    </input-boolean>
+
+                    <input-boolean :values="contract" id="mixing_reasonable_expectations" :change="change">
+                        Are you crossing or mixing these data with others beyond reasonnable expectations that the user should know?
+                    </input-boolean>
+
+                    <input-boolean :values="contract" id="innovative_reasonable_expectations" :change="change">
+                        Are you using these data in a innovative way, or from innovative technologies or innovative organizationnal systems beyond reasonnable expectations of the user?
+                    </input-boolean>
+                </div>
+            </div>
+
+            <h2>Final</h2>
+
+            <input-boolean :values="contract" :change="change"
+                id="accept_users_right_access_modify_transfer_delete">
+                Do you accept that users have the right to access, modify, transfer or delete the data you have collected on them, as per the law?
+            </input-boolean>
+
+            <div v-if="contract.accept_users_right_access_modify_transfer_delete">
+                <h2>Results</h2>
+                <pre>{{ token }}</pre>
+            </div>
+        </div>
+       <script src="index.js"></script>
+    </body>
+</html>
