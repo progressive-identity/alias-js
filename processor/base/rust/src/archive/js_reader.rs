@@ -118,7 +118,7 @@ impl TarGzArchiveReader {
 
 ///// ZIP
 
-#[wasm_bindgen]
+/*#[wasm_bindgen]
 pub struct ZipArchiveReader {
     js_file: Option<JsFile>,
     inner: Option<ZipIterator<ProbeReader<SeekBufReader<File>>>>,
@@ -225,4 +225,4 @@ impl ZipArchiveReader {
 
         Some(progress)
     }
-}
+}*/
