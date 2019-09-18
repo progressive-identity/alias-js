@@ -14,9 +14,13 @@ run:
 	npm start
 
 .PHONY: build-docker
-build-docker:
+build-docker: build
 	$(eval TMP := $(shell mktemp -d))
 	cp -Lr Dockerfile node_modules secret src static $(TMP)
 
 	(cd $(TMP) && docker build -t alias/provider .)
 	rm -rf $(TMP)
+
+.PHONY: up
+up:
+	docker-compose up

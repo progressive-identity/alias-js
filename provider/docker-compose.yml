@@ -1,0 +1,29 @@
+version: "2"
+
+services:
+    provider.alias:
+        image: alias/provider
+        ports:
+            - "8080:80"
+
+        links:
+            - redis.provider.alias
+            - processor.provider.alias
+
+        volumes:
+            - config:/config
+
+    processor.provider.alias:
+        image: alias/processor
+        volumes:
+            - config:/config
+
+    redis.provider.alias:
+        image: redis
+        volumes:
+            - redis:/data
+        command: redis-server --appendonly yes
+
+volumes:
+    config:
+    redis:

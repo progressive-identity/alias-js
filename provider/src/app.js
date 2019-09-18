@@ -1,4 +1,4 @@
-global.config = require('../config.json');
+global.config = require('./config.js');
 global.fetch = require('node-fetch');
 const express = require('express');
 const cors = require('cors');

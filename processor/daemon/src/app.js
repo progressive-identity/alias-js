@@ -1,4 +1,4 @@
-global.config = require('./config.json');
+global.config = require('./config.js');
 const alias = require("@alias/processor-base");
 const ws = require('nodejs-websocket');
 
@@ -105,7 +105,7 @@ const anychain = alias.anychain;
 (async() => {
     await alias.init();
 
-    const listenPort = config.listenPort || 8080;
+    const listenPort = config.http.listenPort;
     (new Server()).listen(listenPort);
     console.log("listening on " + listenPort);
 })();

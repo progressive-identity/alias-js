@@ -14,7 +14,7 @@ run:
 	npm start
 
 .PHONY: build-docker
-build-docker:
+build-docker: build
 	$(eval TMP := $(shell mktemp -d))
 	cp -Lr Dockerfile node_modules src static $(TMP)
 
