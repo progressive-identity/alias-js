@@ -52,8 +52,8 @@ build-inside-docker:
 
 ### Debug run shortcuts
 
-.PHONY: run
-run:
+.PHONY: up
+up:
 	docker-compose -f docker/docker-compose.yml up
 
 # set listening port with env var ALIAS_PROCESSOR_DAEMON_PORT
