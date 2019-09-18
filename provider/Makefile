@@ -16,7 +16,7 @@ run:
 .PHONY: build-docker
 build-docker: build
 	$(eval TMP := $(shell mktemp -d))
-	cp -Lr Dockerfile node_modules secret src static $(TMP)
+	cp -Lr Dockerfile node_modules src static $(TMP)
 
 	(cd $(TMP) && docker build -t alias/provider .)
 	rm -rf $(TMP)
