@@ -1,6 +1,7 @@
 const Worker = require("tiny-worker");
 
-const processorWorkerPath = "/alias/processor/base/js/src/processor_worker.js";
+const processorBasePath = process.env.ALIAS_PROCESSOR_SRC_BASEPATH || "/app/node_modules/@alias/processor-base/src/";
+const processorWorkerPath = processorBasePath + "processor_worker.js";
 
 class Processor {
     constructor(cb) {

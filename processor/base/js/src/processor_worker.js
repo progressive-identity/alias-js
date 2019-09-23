@@ -3,7 +3,8 @@ const path = require('path');
 // XXX tiny-worker seems to not set __dirname as current path of
 // process_worker.js. We need to set it as a constant in the meantime to find a
 // better solution.
-__fakedirname = "/alias/processor/base/js/src";
+__fakedirname = process.env.ALIAS_PROCESSOR_SRC_BASEPATH || "/app/node_modules/@alias/processor-base/src/";
+
 
 const alias = require(path.join(__fakedirname, 'alias.js'));
 

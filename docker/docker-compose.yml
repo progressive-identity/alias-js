@@ -23,7 +23,8 @@ services:
             - ../:/alias
         links:
             - client.alias
-
+        environment:
+            - ALIAS_PROCESSOR_SRC_BASEPATH=/alias/processor/base/js/src/
 
     redis.provider.alias:
         image: redis
