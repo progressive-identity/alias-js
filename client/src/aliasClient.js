@@ -1,82 +1,63 @@
-const cors = require('cors');
 const Anychain = require('@alias/anychain');
+const child_process = require('child_process');
+const cors = require('cors');
+const express = require('express');
 const fs = require('fs');
+const mime = require('mime');
 const path = require('path');
 const rimraf = require('rimraf');
+const util = require('util');
+const {asyncMiddleware} = require('./utils.js');
 
 global.chain = new Anychain();
 
+const execProcessAsync = util.promisify(child_process.exec);
+
 class AliasClient {
     constructor(opts) {
-        //opts = opts || {};
-        if (!opts.secretSeed) { throw "no secretSeed set!"; }
-        if (!opts.name) { throw "no name set!"; }
-        if (!opts.domain) { throw "no domain set!"; }
-        if (!opts.company) { throw "no company set!"; }
-
+        opts = opts || {};
         opts.dataPath = opts.dataPath || "/client_data";
-        opts.scheme = opts.scheme || 'https';
-        opts.redirectURL = opts.redirectURL || opts.scheme + "://" + opts.domain + "/alias/cb/";
-        opts.pushURL = opts.pushURL || opts.scheme + "://" + opts.domain + "/alias/push/";
 
         this.opts = opts;
-        this._clientDecl = null;
+        this.newPush = null;
     }
 
-    get signSk() {
-        return chain.signSeedKeypair(chain.seedOf(this.opts.secretSeed, 32, "sign"));
-    }
-
-    get boxSk() {
-        return chain.boxSeedKeypair(chain.seedOf(this.opts.secretSeed, 32, "box"));
-    }
-
-    get rawClientDecl() {
-        return {
-            type: 'alias.client.decl',
-            name: this.opts.name,
-            desc: this.opts.desc,
-            domain: this.opts.domain,
-            url: this.opts.url,
-            company: this.opts.company,
-            redirectURL: this.opts.redirectURL,
-            pushURL: this.opts.pushURL,
-            legal: this.opts.legal,
-            crypto: {
-                sign: this.signSk.publicKey,
-                box: this.boxSk.publicKey,
-            },
-        };
-    }
-
-    get clientDecl() {
-        if (this._clientDecl == null) {
-            this._clientDecl = chain.sign(this.signSk, this.rawClientDecl);
+    on(name, cb) {
+        let id;
+        if (name == "push") {
+            id = "newPush";
+        } else {
+            throw "unknown event name: " + name;
         }
 
-        return this._clientDecl;
+        if (cb === undefined) {
+            delete this[id];
+        } else {
+            this[id] = cb;
+        }
+
+        return this;
     }
 
-    get clientId() {
-        return this.opts.scheme + '://' + this.opts.domain + '/alias/';
-    }
-
-    get router() {
-        const router = require('express-promise-router')();
+    // returns the express router for the public interface of the server.
+    get publicRouter() {
+        const router = express.Router();
 
         router.get('/alias/', cors(), (req, res) => {
-            res.send(chain.toJSON(this.clientDecl));
+            res.send(chain.toJSON({
+                what: "alias client push server",
+            }));
         });
 
-        router.post('/alias/grant', async (req, res) => {
+        router.post('/alias/grant', asyncMiddleware(async (req, res) => {
             const grant = chain.fromToken(req.body.grant);
             const bind = chain.fromToken(req.body.bind);
             await this.saveGrant(grant, bind);
 
             res.json({});
-        });
+        }));
 
-        router.put('/alias/push/:grantHash', async (req, res) => {
+        router.put('/alias/push/:grantHash', asyncMiddleware(async (req, res) => {
             const grant = chain.fromJSON(req.body);
             if (chain.fold(grant).base64() !== req.params.grantHash) {
                 return res.status(400).json({status: "error", reason: "bad grant hash"});
@@ -85,9 +66,9 @@ class AliasClient {
             await this.saveGrant(grant);
             await this.clearGrantData(grant);
             res.send();
-        });
+        }));
 
-        router.post('/alias/push/:grantHash', async (req, res) => {
+        router.post('/alias/push/:grantHash', asyncMiddleware(async (req, res) => {
             const grantHash = req.params.grantHash;
 
             if (this.opts.onNewPush) {
@@ -96,9 +77,9 @@ class AliasClient {
             }
 
             res.send();
-        });
+        }));
 
-        router.put('/alias/push/:grantHash/:filename', async (req, res) => {
+        router.put('/alias/push/:grantHash/:filename', asyncMiddleware(async (req, res) => {
             const grantHash = req.params.grantHash;
             const filename = req.params.filename;
 
@@ -121,9 +102,9 @@ class AliasClient {
 
             await this.saveGrantData(grantHash, filename, startOffset, req.body);
             res.send();
-        });
+        }));
 
-        router.post('/alias/push/:grantHash/:filename', async (req, res) => {
+        router.post('/alias/push/:grantHash/:filename', asyncMiddleware(async (req, res) => {
             const grantHash = req.params.grantHash;
             const filename = req.params.filename;
 
@@ -131,27 +112,52 @@ class AliasClient {
 
             res.send();
 
-        });
+        }));
 
         return router;
     }
 
-    generateContract(args) {
-        if (!args.scopes) { throw "no scopes set!"; }
-        let contract = {
-            type: "alias.contract",
-            client: this.clientDecl,
-            scopes: args.scopes,
-            legal: args.legal,
-        };
+    // returns a Express router for the private interface of this server.
+    get privateRouter() {
+        const router = express.Router();
 
-        return contract;
+        router.use("/alias/grant/:grantHash/data/", asyncMiddleware(async (req, res, next) => {
+            const force = req.method == 'POST';
+            try {
+                    await this.fetch(req.params.grantHash, {
+                    force: force,
+                });
+            } catch(e) {
+                return res.status(404).json({status: "error", reason: e});
+            }
+            const rootPath = this.getDataPath(req.params.grantHash);
+
+            const basePath = decodeURIComponent(req.originalUrl.substr(req.baseUrl.length)); // XXX TODO this is dirty
+
+            const filePath = this.getFilePath(req.params.grantHash, basePath);
+            const fileStat = await fs.promises.lstat(filePath);
+
+            // if directory, returns a list of files. if not, returns the file
+            // content.
+            if (fileStat.isDirectory()) {
+                const r = await this.browse(req.params.grantHash, basePath);
+                res.json({status: "ok", "resources": r});
+            } else {
+                const fh = fs.createReadStream(filePath);
+                res.setHeader("content-type", mime.lookup(filePath));
+                fh.pipe(res);
+            }
+        }));
+
+        return router;
     }
 
+    // returns the base path for a given grant
     _grantPath(grantHash) {
         return path.join(this.opts.dataPath, "grant", grantHash);
     }
 
+    // persistently store a grant and a bind token
     async saveGrant(grant, bind) {
         const grantPath = this._grantPath(chain.fold(grant).base64());
         await fs.promises.mkdir(path.join(grantPath, "data"), { recursive: true });
@@ -166,6 +172,7 @@ class AliasClient {
         }
     }
 
+    // get a grant persistently stored
     async getGrant(grantHash) {
         const grantTokenPath = path.join(this._grantPath(grantHash), "token");
         const token = await fs.promises.readFile(grantTokenPath);
@@ -190,12 +197,14 @@ class AliasClient {
         };
     }
 
+    // clear all data related to a given grant
     async clearGrantData(grant) {
         return new Promise((resolve, reject) => {
             rimraf(path.join(this._grantPath(chain.fold(grant).base64()), "data", "*"), resolve);
         });
     }
 
+    // save data linked to a grant given its filename and its offset
     async saveGrantData(grantHash, filename, offset, data) {
         const dataPath = path.join(this._grantPath(grantHash), "data", filename);
 
@@ -208,6 +217,8 @@ class AliasClient {
         }
     }
 
+    // fetch the data from the authorization server. Will block until the data
+    // is stored.
     async fetch(grantHash, opts) {
         opts = opts || {};
         opts.force = opts.force != null ? opts.force : false;
@@ -225,20 +236,22 @@ class AliasClient {
             });
 
             const resJson = await r.json();
-console.log("resJson", resJson);
             if (resJson.status == "error") {
                 throw resJson.reason;
+            }
+
+            // did any processing happened?
+            if (resJson.processor.length == 0) {
+                return;
             }
 
             const grantPath = this._grantPath(grantHash);
             const dataPath = path.join(grantPath, "data");
 
             // XXX TODO better handling of extract of data
-            const util = require('util');
-            const exec = util.promisify(require('child_process').exec);
 
             try {
-                await exec('tar xfz root.tar.gz && rm root.tar.gz', {
+                await execProcessAsync('tar xfz root.tar.gz && rm root.tar.gz', {
                     cwd: path.join(grantPath, "data"),
                 });
             } catch(e) {
@@ -251,15 +264,14 @@ console.log("resJson", resJson);
         return path.join("grants", grantHash, "data");
     }
 
+    // returns a list of file paths recursively stored in a given path for a
+    // given grant.
     async browse(grantHash, basePath) {
         basePath = basePath || "";
 
         // XXX TODO better handling of extract of data
-        const util = require('util');
-        const exec = util.promisify(require('child_process').exec);
-
         const grantPath = this._grantPath(grantHash);
-        const r = await exec('find .', {
+        const r = await execProcessAsync('find .', {
             cwd: path.join(grantPath, "data", basePath),
         });
 

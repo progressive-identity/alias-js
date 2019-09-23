@@ -3,12 +3,13 @@
         <title>🔒 Alias</title>
 
 
-        <script type="application/javascript" src="jquery-3.4.1.min.js"></script>
-        <script type="application/javascript" src="header.js"></script>
-        <script type="application/javascript" src="sodium.js"></script>
-        <script type="application/javascript" src="anychain.js"></script>
-        <script type="application/javascript" src="alias.js"></script>
+        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="/header.js"></script>
+        <script type="application/javascript" src="/sodium.js"></script>
+        <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/alias.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script type="application/javascript" src="/alias-vue.js"></script>
 
         <style>
             html, body {
@@ -49,8 +50,7 @@
                                     {{ clients[client].body.name }}
                                 </a>
 
-                                (<a href="#" v-on:click="revokeClient(client)">revoke<span v-if="byClient.length>1"> all grants</span></a>,
-                                <a href="#" v-on:click="displayClient(client)">read <span v-if="byClient.length>1">the {{byClient.length}}</span> contract<span v-if="byClient.length>1">s</span></a>)
+                                (<a href="#" v-on:click="displayClient(client)">read <span v-if="byClient.length>1">the {{byClient.length}}</span> contract<span v-if="byClient.length>1">s</span></a>)
                             </li>
                         </ul>
                     </ul>

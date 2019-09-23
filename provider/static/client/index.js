@@ -7,9 +7,13 @@ const vue = new Vue({
     },
     methods: {
         revokeGrant: function(grant) {
-            const grantFold = chain.fold(grant).base64();
             let url = "/revoke/?";
             url = url + "grant=" + encodeURIComponent(chain.toToken(grant));
+            window.location.href = url;
+        },
+        showGrant: function(grant) {
+            let url = "/order/?";
+            url = url + "code=" + encodeURIComponent(chain.toToken(grant));
             window.location.href = url;
         }
     },

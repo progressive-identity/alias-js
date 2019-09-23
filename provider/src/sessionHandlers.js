@@ -35,6 +35,13 @@ const loginSeed = new SeedManager(10000); // seed changed every 10s
 
 const app = express.Router();
 
+app.get('/', authed, (req, res) => {
+    res.status(200).send({
+        status: "ok",
+        publicKey: req.session.publicKey
+    });
+});
+
 app.get('/seed', (req, res) => {
     res.status(200).send(chain.toJSON(loginSeed.seed));
 });

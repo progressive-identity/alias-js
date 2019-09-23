@@ -10,7 +10,6 @@
         "express-basic-auth": "^1.2.0",
         "googleapis": "^39.2.0",
         "ioredis": "^4.14.0",
-        "level": "^5.0.1",
         "libsodium-wrappers": "^0.7.4",
         "morgan": "^1.9.1",
         "node-fetch": "^2.6.0",

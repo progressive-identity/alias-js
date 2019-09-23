@@ -8,6 +8,7 @@
         <script type="application/javascript" src="/anychain.js"></script>
         <script type="application/javascript" src="/alias.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script type="application/javascript" src="/alias-vue.js"></script>
 
         <style>
             html, body {
@@ -26,23 +27,24 @@
             <ul v-if="client">
                 <li>Name: {{ client.body.name }}</li>
                 <li>Description: {{ client.body.desc }}</li>
-                <li>Link: <a :href="client.body.url">{{ client.body.url }}</a></li>
+                <li>Link: <a :href="'https://' + client.body.domain" target="_blank">{{ client.body.domain }}</a></li>
                 <li>Client declaration signature date: {{ client.date }}</li>
             </ul>
 
             <div v-if="view">
-                <div v-for="(grant, grantID) in view">
-                    <h2>Grant #{{ grantID+1 }}</h2>
+                <div v-for="(i, idx) in view">
+                    <h2>Grant #{{ idx+1 }}</h2>
                     <ul>
-                        <li>Date: {{ grant.date }}</li>
+                        <li>Date: {{ i.grant.date }}</li>
                         <li>Scopes: <ul>
-                            <li v-for="scope in grant.body.scopes">
-                                <code>{{ formatScope(scope) }}</code>
+                            <li v-for="scope in i.scopes">
+                                <alias-scope :value="scope"></alias-scope>
                             </li>
                         </ul></li>
                     </ul>
 
-                    <button v-on:click="revokeGrant(grant)">Revoke this grant</button>
+                    <button v-on:click="showGrant(i.grant)">View more details</button>
+                    <button v-on:click="revokeGrant(i.grant)">Revoke this grant</button>
                 </div>
             </div>
         </div>

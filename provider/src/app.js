@@ -44,7 +44,7 @@ app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
     const viewModel = {};
     for (const grantID in grantByID) {
         const grant = grantByID[grantID];
-        for (const scope of grant.body.scopes) {
+        for (const scope of grants.getGrantScopes(grant)) {
             const client = grant.body.contract.client;
             const clientID = chain.fold(client).base64();
 
@@ -52,8 +52,8 @@ app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
 
             const byProvider = viewModel[scope.provider] || {};
             const byPath = byProvider[scope.path] || {};
-            const byClient = byPath[clientID] || [];
-            byClient.push(grantID);
+            const byClient = byPath[clientID] || new Set();
+            byClient.add(grantID);
 
             byPath[clientID] = byClient;
             byProvider[scope.path] = byPath;
@@ -86,7 +86,10 @@ app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) =
 
         client = grant.body.contract.client;
 
-        viewModel.push(grant);
+        viewModel.push({
+            grant: grant,
+            scopes: grants.getGrantScopes(grant),
+        });
     }
 
     if (client == null) {
@@ -121,15 +124,13 @@ app.post("/alias/process", asyncMiddleware(async (req, res) => {
 
     // list scopes by providers
     const scopesByProvider = {};
-    for (const scope of grant.body.scopes) {
+    for (const scope of grants.getGrantScopes(grant)) {
         const provider = scope.provider;
         scopesByProvider[provider] = scopesByProvider[provider] || [];
         scopesByProvider[provider].push(scope);
     }
 
-    const grantHash = chain.fold(grant).base64();
-    const pushURL = grant.body.contract.client.body.pushURL + grantHash;
-
+    const pushURL = grants.getGrantPushURL(grant);
     await fetch(pushURL, {
         method: 'PUT',
         body: chain.toToken(grant),
@@ -170,7 +171,7 @@ app.post("/alias/process", asyncMiddleware(async (req, res) => {
         body: {"finished": true},
     });
 
-    return res.json({status: 'ok', grantID: grantHash, processor: allProcess});
+    return res.json({status: 'ok', processor: allProcess});
 }));
 
 app.use('/', express.static('static'))
@@ -178,5 +179,5 @@ app.use('/', express.static('static'))
 sodium.ready.then(() => {
     const listenPort = config.http.listenPort || 8080;
 
-    app.listen(listenPort, () => console.log(`Listening on port ${listenPort}!`))
+    app.listen(listenPort, () => console.log(`provider listening on port ${listenPort}!`))
 });

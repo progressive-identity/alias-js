@@ -1,7 +1,7 @@
 version: "2"
 
 services:
-    authz.gdpr.dev.local:
+    provider.alias:
         image: alias/sandbox
         ports:
             - "127.0.1.2:80:80"
@@ -10,24 +10,24 @@ services:
             - ../:/alias
 
         links:
-            - redis.authz.gdpr.dev.local
-            - processor.authz.gdpr.dev.local
+            - redis.provider.alias
+            - processor.provider.alias
 
-    processor.authz.gdpr.dev.local:
+    processor.provider.alias:
         image: alias/sandbox
         ports:
             - "127.0.1.3:80:80"
-        command: "sh -c \"(cd processor/daemon && nodemon app.js)\""
+        command: "sh -c \"(cd processor/daemon && nodemon src/app.js)\""
         volumes:
             - ../:/alias
         links:
-            - client.gdpr.dev.local
+            - client.alias
 
 
-    redis.authz.gdpr.dev.local:
+    redis.provider.alias:
         image: redis
 
-    client.gdpr.dev.local:
+    client.alias:
         image: alias/sandbox
         ports:
             - "127.0.1.1:80:80"
@@ -35,8 +35,3 @@ services:
         volumes:
             - ../:/alias
             - ../data/client:/client_data
-        links:
-            - redis.client.gdpr.dev.local
-
-    redis.client.gdpr.dev.local:
-        image: redis

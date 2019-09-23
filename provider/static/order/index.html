@@ -9,6 +9,7 @@
         <script type="application/javascript" src="/anychain.js"></script>
         <script type="application/javascript" src="/alias.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script type="application/javascript" src="/alias-vue.js"></script>
 
         <style>
             html, body {
@@ -29,14 +30,9 @@
             </ul>
 
             <div v-if="o.body.type == 'alias.grant'">
-                <h2>Grant</h2>
-                <ul>
-                    <li>Scopes: <ul><li v-for="scope in o.body.scopes"><code>{{ formatScope(scope) }}</code> ({{scope.base}})</li></ul></li>
-                </ul>
-
                 <h3>Contract</h3>
+
                 <ul>
-                    <li>Usage: {{ o.body.contract.legal.usage }}</li>
                     <li>Terms of service: <a :href="o.body.contract.legal.tos_url" target="_blank">{{o.body.contract.legal.tos_url}}</a></li>
                     <li>DPO's email: <a :href="'mail:' + o.body.contract.legal.email_dpo">{{o.body.contract.legal.email_dpo}}</a></li>
                     <li>Your data: <ul>
@@ -49,11 +45,36 @@
                         <li><verb :value="o.body.contract.legal.transfer_outside_eea">will</verb> be transferred outside the European Economic Area (EEA);</li>
                         <li><verb :value="o.body.contract.legal.evaluation_notation_rating_profiling">will</verb> be used for evaluation, notation, rating, or for proling activities;</li>
                         <li><verb :value="o.body.contract.legal.automated_decision">will</verb> be used to generate au automated decision about you;</li>
-                        <li><verb :value="o.body.contract.legal.automated_surveillance">has</verb> an automated surveillance attached;</li>
+                        <li><verb :value="o.body.contract.legal.automated_surveillance">will</verb> be used for automated surveillance;</li>
                         <li><verb :value="o.body.contract.legal.mixing_reasonable_expectations">will</verb> be crossed or mixed beyond reasonnable expectations;</li>
                         <li><verb :value="o.body.contract.legal.innovative_reasonable_expectations">will</verb> be used in a innovative way, or from innovative technologies or innovative organizationnal systems beyond reasonnable expectations;</li>
                     </ul></li>
                 </ul>
+
+                <div v-if="hasContractContractualBase(o.body.contract)">
+                    <h4>Contractual base</h4>
+
+                    <grant-usages-scopes :value="o.body.contract.base.contractual"></grant-usages-scopes>
+                </div>
+
+                <div v-if="hasContractConsentBase(o.body.contract)">
+                    <h4>Consent base</h4>
+
+                    <div v-for="(consent, idx) in o.body.contract.base.consent">
+                        <h5>Part {{idx+1}}</h5>
+                        <grant-usages-scopes :value="consent"></group-usages-scopes>
+                    </div>
+                </div>
+
+                <div v-if="hasContractLegitimateBase(o.body.contract)">
+                    <h4>Legitimate base</h4>
+                    <p>Reason: {{o.body.contract.base.legitimate.reason}}</p>
+
+                    <div v-for="(legitimate, idx) in o.body.contract.base.legitimate.groups">
+                        <h5>Part {{idx+1}}</h5>
+                        <grant-usages-scopes :value="legitimate"></group-usages-scopes>
+                    </div>
+                </div>
 
                 <h3>Client</h3>
                 <ul>

@@ -9,6 +9,7 @@
         <script type="application/javascript" src="/anychain.js"></script>
         <script type="application/javascript" src="/alias.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script type="application/javascript" src="/alias-vue.js"></script>
 
         <style>
         html {
@@ -60,6 +61,16 @@
             font-size: 90%;
             overflow-wrap: break-word;
         }
+
+        .indent {
+            border-left: 6px solid rgba(0, 0, 0, .1);
+            padding-left: 10px;
+        }
+
+        .indent:hover {
+            border-left: 6px solid rgba(0, 0, 0, .2);
+
+        }
         </style>
     </head>
 
@@ -69,37 +80,35 @@
             <p class="title">🔒 <em>{{ c.client.body.name }}</em>, from <em>{{ c.client.body.company }}</em>, is requesting
             access to your data</p>
 
-            <blockquote class="usage" v-if="c.legal && c.legal.usage">
-                <p>{{ c.legal.usage }}</p>
-            </blockquote>
-
-
-            <p>This application will access to the following data:</p>
-            <ul>
-                <li v-for="scope in scopes.contractual">
-                    <code>{{ formatScope(scope) }}</code>
-                </li>
-            </ul>
-
-            <div v-if="scopes.legitimate.length > 0">
-                <p>This application also request a legitimate access to the following data:</p>
-                <ul>
-                    <li v-for="scope in scopes.legitimate">
-                        <code>{{ formatScope(scope) }}</code>
-                    </li>
-                </ul>
+            <div v-if="hasContractual" class="indent">
+                <p>This application will access to the following data:</p>
+                <ul><li v-for="scope in c.base.contractual.scopes"><alias-scope :value="scope" /></li></ul>
+                <p>This data will be used for the following reason<span v-if="c.base.contractual.usages.length>1">s</span>:</p>
+                <ul><li v-for="usage in c.base.contractual.usages">{{ usage }}</code></li></ul>
             </div>
 
-            <div v-if="scopes.consent.length > 0">
-                <p>To fulfill the request,</p>
-                <ul>
-                <li v-for="(scope, i) in scopes.consent">
-                    Do you also consent to share data scoped <code>{{
-                        formatScope(scope) }}</code>?
-                    <input type="radio" v-model="scopes.consent[i].agree" :value="true">Yes
-                    <input type="radio" v-model="scopes.consent[i].agree" :value="false">No
-                </li>
-                </ul>
+            <div v-if="hasConsent">
+                <div v-for="consent in c.base.consent" class="indent">
+                    <p>This application is requesting your consent to access to the following data:</p>
+                    <ul><li v-for="(scope, i) in consent.scopes">
+                            Do you also consent to share data scoped <alias-scope :value="scope"></alias-scope>?
+                        <input type="radio" v-model="scope.agree" :value="true">Yes
+                        <input type="radio" v-model="scope.agree" :value="false">No
+                    </li></ul>
+                    <p>This data will be used for the following reason<span v-if="consent.usages.length>1">s</span>:</p>
+                    <ul><li v-for="usage in consent.usages">{{ usage }}</code></li></ul>
+                </div>
+            </div>
+
+            <div v-if="hasLegitimate" class="indent">
+                <p>This application requires to access to legitimate data for the following reason:</p>
+                <p>{{ c.base.legitimate.reason }}</p>
+                <div v-for="legitimate in c.base.legitimate.groups" class="indent">
+                    <p>This application is requesting to access to the following data:</p>
+                    <ul><li v-for="scope in legitimate.scopes"><alias-scope :value="scope" /></li></ul>
+                    <p>This data will be used for the following reason<span v-if="legitimate.usages.length>1">s</span>:</p>
+                    <ul><li v-for="usage in legitimate.usages">{{ usage }}</code></li></ul>
+                </div>
             </div>
 
             <p>Your data:</p>
@@ -108,16 +117,15 @@
                 <li><verb :value="true">will</verb> be shared with <em>{{c.client.body.name}}</em>
                 <span v-if="c.legal && c.legal.destination">
                     and <em v-for="(t, idx) in c.legal.destination">{{t}}<span v-if="idx+1 < c.legal.destination.length">, </span></em></span>;</li>
-                <li v-if="c.legal.storage_duration"><verb :value="true">will</verb> be stored {{c.legal.storage_duration}};</li>
-
-
                 <li><verb :value="c.legal.transfer_outside_eea">will</verb> be transferred outside the European Economic Area (EEA);</li>
                 <li><verb :value="c.legal.evaluation_notation_rating_profiling">will</verb> be used for evaluation, notation, rating, or for proling activities;</li>
                 <li><verb :value="c.legal.automated_decision">will</verb> be used to generate au automated decision about you;</li>
-                <li><verb :value="c.legal.automated_surveillance">has</verb> an automated surveillance attached;</li>
+                <li><verb :value="c.legal.automated_surveillance">will</verb> be used for automated surveillance;</li>
                 <li><verb :value="c.legal.mixing_reasonable_expectations">will</verb> be crossed or mixed beyond reasonnable expectations;</li>
                 <li><verb :value="c.legal.innovative_reasonable_expectations">will</verb> be used in a innovative way, or from innovative technologies or innovative organizationnal systems beyond reasonnable expectations;</li>
             </ul>
+
+            <p>Your data will be stored for a duration of <em>{{c.legal.storage_duration}}</em>.</p>
 
             <p><a v-if="c.legal.tos_url" :href="c.legal.tos_url" target="_blank">Privacy policy</a> - <a :href="'mail:' + c.legal.email_dpo">Contact the DPO office</a></p>
 

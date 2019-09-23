@@ -64,6 +64,8 @@
                     <button v-on:click="refresh(true)">Refresh data</button>
                     <h3>Listing</h3>
                     <pre><span v-for="fn in data.resources"><a :href="fileURL(fn)">{{fn}}</a><br /></span></pre>
+                    <pre v-if="data.resources.length == 0" style="color: gray;">(no data)</pre>
+
                 </div>
 
 

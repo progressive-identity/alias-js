@@ -22,12 +22,16 @@
                     What is the name of your application?
                 </input-text>
 
+                <input-text :values="client" id="company" :change="change">
+                    What is the name of your company?
+                </input-text>
+
                 <input-text :values="client" id="desc" :change="change">
                     What is a description of your application?
                 </input-text>
 
-                <input-text :values="client" id="url" :change="change">
-                    What is the URL of your application?
+                <input-text :values="client" id="domain" :change="change">
+                    What is the Web domain of your application (e.g. yourdomain.com)?
                 </input-text>
             </div>
 
@@ -84,11 +88,6 @@
                 <h3>Legal</h3>
 
                 <div class="indent">
-                    <input-text :values="contract" id="legal_usage" :change="change">
-                        Provide in one sentence all the intended uses of the data
-                        requested.
-                    </input-text>
-
                     <input-text :values="contract" id="legal_tos_url" :change="change">
                         What is the URL to your User's Terms of Service?
                     </input-text>
@@ -148,7 +147,13 @@
 
             <div v-if="contract.accept_users_right_access_modify_transfer_delete">
                 <h2>Results</h2>
-                <pre>{{ token }}</pre>
+                <div class="indent">
+                    <button v-on:click="downloadSecret()">Download your secret key</button>
+                    <button v-on:click="downloadClient()">Download your client declaration</button>
+                    <button v-on:click="downloadContract()">Download your contract</button>
+                </div>
+                <h3>Raw contract</h3>
+                <pre class="indent">{{ out.token }}</pre>
             </div>
         </div>
        <script src="index.js"></script>

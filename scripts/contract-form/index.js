@@ -198,6 +198,16 @@ function newScopeGroup() {
     };
 }
 
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
 function addNonEmptyField(d, k, v, mapper) {
     if (v === undefined || v === null) {
         return;
@@ -244,17 +254,25 @@ const vue = new Vue({
             legitimate: false,
         },
         token: null,
+        out: {},
     },
     methods: {
         change: function() {
             try {
                 var secretSeed = sodium.from_base64(this.client.secret_seed_b64);
-            } catch {
+            } catch(e) {
+                console.error(e);
                 return;
             }
 
             const signSk = chain.signSeedKeypair(chain.seedOf(secretSeed, 32, "sign"));
             const boxSk = chain.boxSeedKeypair(chain.seedOf(secretSeed, 32, "box"));
+
+            const secret = {
+                seed: secretSeed,
+                sign: signSk,
+                box: boxSk,
+            };
 
             const clientDecl = {
                 type: 'alias.client.decl',
@@ -266,7 +284,8 @@ const vue = new Vue({
 
             addNonEmptyField(clientDecl, "name", this.client.name);
             addNonEmptyField(clientDecl, "desc", this.client.desc);
-            addNonEmptyField(clientDecl, "url", this.client.url);
+            addNonEmptyField(clientDecl, "domain", this.client.domain);
+            addNonEmptyField(clientDecl, "company", this.client.company);
 
             const clientDeclSigned = chain.sign(signSk, clientDecl);
 
@@ -286,9 +305,9 @@ const vue = new Vue({
 
             const contract = {
                 type: 'alias.contract',
-                client: clientDeclSigned,
                 legal: {},
                 base: base,
+                client: clientDeclSigned,
             };
 
             addNonEmptyField(contract.legal, "accept_users_right_access_modify_transfer_delete", this.contract.accept_users_right_access_modify_transfer_delete);
@@ -305,8 +324,21 @@ const vue = new Vue({
             addNonEmptyField(contract.legal, "transfer_outside_eea", this.contract.transfer_outside_eea);
             addNonEmptyField(contract.legal, "usage", this.contract.legal_usage);
 
-            this.token = chain.toJSON(contract);
+            this.out.client = clientDeclSigned;
+            this.out.secret = secret;
+            this.out.contract = contract;
+            this.out.token = chain.toJSON(contract);
             this.$forceUpdate();
+        },
+        downloadSecret: function() {
+            alert("WARNING! The content of this file contains your secret credentials. If you loose this file, you'll loose your identity in the network. If you leak this file, your identity will be stolen. Encrypt it and save it somewhere safe.");
+            download("secret.json", chain.toToken(this.out.secret));
+        },
+        downloadClient: function() {
+            download("client-" + chain.fold(this.out.client).base64() + ".json", chain.toToken(this.out.client));
+        },
+        downloadContract: function() {
+            download("contract-" + chain.fold(this.out.contract).base64() + ".json", chain.toToken(this.out.contract));
         },
     },
 });
@@ -314,6 +346,7 @@ const vue = new Vue({
 
 chain.ready.then(() => {
     vue.client.secret_seed_b64 = sodium.to_base64(chain.seed());
+    console.log(vue.client.secret_seed_b64);
     vue.change();
     vue.$forceUpdate();
 });

@@ -40,7 +40,7 @@ function run() { (async () => {
             });
 
             data.fileURL = (fn) => {
-                return '/api/grant/' + data.grantHash + "/" + fn;
+                return '/alias/grant/' + data.grantHash + "/data/" + fn;
             };
         }
     }
@@ -52,7 +52,7 @@ function run() { (async () => {
         vue.dataError = null;
         $.ajax({
             method: method,
-            url: '/api/grant/' + data.grantHash + "/",
+            url: '/alias/grant/' + data.grantHash + "/data/",
         }).then((r) => {
             vue.data = r;
         }).catch((r) => {

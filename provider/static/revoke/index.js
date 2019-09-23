@@ -1,16 +1,9 @@
 var vue = null;
 
-function run() {
-    const sess = currentSession();
+async function run() {
+    await authed();
 
-    if (!sess) {
-        const url = new URL(window.location.href);
-        const pathname = url.pathname + url.search;
-        window.location.href = "/login/?redirect=" + encodeURIComponent(pathname);
-        return;
-    }
-
-    const {userSeed, box} = sess;
+    const {userSeed, box} = currentSession();
     const idty = openBox(box, userSeed);
 
     const selfPublicKey = idty.sign.publicKey;
@@ -29,12 +22,16 @@ function run() {
         cbReturnError(client, "unauthorized_client");
     };
 
+    const hash = chain.fold(grant).base64();
+    const scopes = await $.ajax(`/api/grant/${hash}/scopes`);
+
     const contract = grant.body.contract;
 
     vue = new Vue({
         el: "#popup",
         data: {
             grant: grant,
+            scopes: scopes,
             formatScope: formatScope,
         },
         methods: {
@@ -46,12 +43,12 @@ function run() {
                 revoke = chain.sign(idty.sign, revoke);
 
                 $.ajax({
-                    method: 'POST',
-                    url: "/api/grant/revoke",
+                    method: 'DELETE',
+                    url: "/api/grant/",
                     data: chain.toToken(revoke),
                     contentType: "application/json",
                 }).then((r) => {
-                    window.location.href = "/";
+                    window.location.href = "/home/";
                 });
             },
             cancel: function() {

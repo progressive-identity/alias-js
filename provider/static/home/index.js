@@ -54,9 +54,8 @@ const vue = new Vue({
                 method: "POST",
                 url: "/api/session/clear"
             }).then(() => {
-                deleteBox(sess.username, sess.passHash).then(logout);
-                window.location.href = "/login/";
-            });
+                return deleteBox(sess.username, sess.passHash)
+            }).then(logout);
         },
         logout: function() {
             logout();
@@ -64,19 +63,13 @@ const vue = new Vue({
     },
 });
 
-function run() {
-    const sess = currentSession();
+async function run() {
+    await authed();
 
-    if (!sess) {
-        window.location.href = "/login/";
-        return;
-    }
-
-    const {userSeed, box} = sess;
+    const {userSeed, box} = currentSession();
 
     const idty = openBox(box, userSeed);
     const authzURL = new URL(idty.bind.body.origin);
-    console.log(authzURL);
     vue.idty = {
         username: idty.username,
         alias: idty.username + "@" + authzURL.hostname,

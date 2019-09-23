@@ -54,7 +54,7 @@ $("#login form").on("submit", () => {
 
 function redirect() {
     const url = new URL(window.location.href);
-    const redirect = url.searchParams.get('redirect') || '/';
+    const redirect = url.searchParams.get('redirect') || '/home/';
     //console.log(url.origin + redirect);
     window.location.href = url.origin + redirect;
 }

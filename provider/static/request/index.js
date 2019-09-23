@@ -8,10 +8,24 @@ Vue.component('verb', {
 
 var vue = null;
 
+function deepcloneJSON(x) {
+    return JSON.parse(JSON.stringify(x));
+}
+
+function getContractCallbackURL(contract) {
+    const network = contract.network || {};
+    const scheme = network.scheme || "https";
+    const domain = contract.client.body.domain;
+    const endpoint = network.redirectEndpoint || "/alias/cb/";
+    if (endpoint.charAt(0) != "/") { throw "bad endpoint"; }
+    const url = `${scheme}://${domain}${endpoint}`;
+    return url;
+}
+
 function cbReturnError(contract, error, desc, uri) {
     const state = (new URL(window.location.href)).searchParams.get('state');
 
-    let url = contract.client.body.redirectURL + "?";
+    let url = getContractCallbackURL(contract) + "?";
     url = url + "error=" + encodeURIComponent(error);
     if (desc)  url = url + "&error_description=" + encodeURIComponent(desc);
     if (uri)   url = url + "&error_uri=" + encodeURIComponent(uri);
@@ -23,7 +37,7 @@ function cbReturnError(contract, error, desc, uri) {
 function cbReturn(contract, grant, bind) {
     const state = (new URL(window.location.href)).searchParams.get('state');
 
-    let url = contract.client.body.redirectURL + "?";
+    let url = getContractCallbackURL(contract) + "?";
     url = url + "code=" + encodeURIComponent(chain.toToken(grant));
     url = url + "&bind=" + encodeURIComponent(chain.toToken(bind));
     if (state) url = url + "&state=" + encodeURIComponent(state);
@@ -32,27 +46,10 @@ function cbReturn(contract, grant, bind) {
     window.location.href = url;
 }
 
-function cbProcessReturn(contract, grant) {
-    const state = (new URL(window.location.href)).searchParams.get('state');
+async function run() {
+    await authed();
 
-    let url = grant.body.fetch.frontURL + "?";
-    url = url + "code=" + encodeURIComponent(chain.toToken(grant));
-    if (state) url = url + "&state=" + encodeURIComponent(state);
-
-    window.location.href = url;
-}
-
-function run() {
-    const sess = currentSession();
-
-    if (!sess) {
-        const url = new URL(window.location.href);
-        const pathname = url.pathname + url.search;
-        window.location.href = "/login/?redirect=" + encodeURIComponent(pathname);
-        return;
-    }
-
-    const {userSeed, box} = sess;
+    const {userSeed, box} = currentSession();
     const idty = openBox(box, userSeed);
 
     const selfPublicKey = idty.sign.publicKey;
@@ -72,69 +69,62 @@ function run() {
             }
         });
     } catch(e) {
-        cbReturnError(client, "unauthorized_client");
+        alert("ERROR: client sent an invalid contract");
+        return;
     };
 
-    const scopesByBase = {contractual: [], consent: [], legitimate: []};
-    for (const scope of contract.scopes) {
-        if (!scopesByBase[scope.base]) {
-            console.error(`unknown scope base: ${scope.base}`);
-            continue;
+    const hasContractual = contract.base.contractual && contract.base.contractual.scopes.length != 0 && contract.base.contractual.usages.length != 0;
+    const hasConsent = contract.base.consent && contract.base.consent.length != 0;
+    const hasLegitimate = contract.base.legitimate && contract.base.legitimate.groups.length != 0;
+
+    const draftContract = deepcloneJSON(contract);
+    for (const consent of draftContract.base.consent) {
+        for (const scope of consent.scopes) {
+            scope.agree = false;
         }
-
-        scope.agree = true;
-        scopesByBase[scope.base].push(scope);
-    }
-
-    for (const scope of scopesByBase.consent) {
-        scope.agree = false;
     }
 
     vue = new Vue({
         el: "#popup",
         data: {
-            c: contract,
-            cId: chain.fold(contract).base64(),
-            scopes: scopesByBase,
-            userPublicKey: sodium.to_base64(selfPublicKey),
-            clientSignerH: sodium.to_base64(contract.client.signer),
+            c: draftContract,
+            hasConsent: hasConsent,
+            hasContractual: hasContractual,
+            hasLegitimate: hasLegitimate,
             showAdvanced: false,
-            formatScope: formatScope,
         },
         methods: {
             toggleAdvanced: function() {
                 this.showAdvanced = !this.showAdvanced;
             },
             agree: function() {
-                const finalScopes = [];
-                for (const scopes of Object.values(this.scopes)) {
-                    for (const scope of scopes) {
-                        if (scope.agree) {
-                            delete scope.agree;
-                            finalScopes.push(scope);
-                        }
-                    }
-                }
-
                 const url = new URL(window.location.href);
                 const frontURL = url.origin + "/process/";
+
+                const consentedScopes = [];
+                for (const consent of this.c.base.consent) {
+                    const scopes = [];
+                    for (const scope of consent.scopes) {
+                        const agreed = scope.agree;
+                        scopes.push(agreed);
+                    }
+                    consentedScopes.push(scopes);
+                }
 
                 let grant = {
                     type: "alias.grant",
                     contract: contract,//chain.fold(contract),
-                    scopes: finalScopes,
+                    consent: consentedScopes,
                 };
-                grant = chain.sign(idty.sign, grant);
 
-                console.log(chain.toJSON(grant));
+                grant = chain.sign(idty.sign, grant);
 
                 $.ajax({
                     method: 'POST',
-                    url: "/api/grant/new",
+                    url: "/api/grant/",
                     data: chain.toToken(grant),
                     contentType: "application/json",
                 }).then((r) => {
-                    //cbProcessReturn(client, grant);
                     cbReturn(contract, grant, idty.bind);
                 });
             },

@@ -92,6 +92,27 @@ function login(sk) {
     ;
 }
 
+function redirectLogin() {
+    const url = new URL(window.location.href);
+    const pathname = url.pathname + url.search;
+    window.location.href = "/login/?redirect=" + encodeURIComponent(pathname);
+}
+
+function authed() {
+    const sess = currentSession();
+    if (!sess) {
+        redirectLogin();
+        return;
+    }
+
+    return $.ajax("/api/session")
+        .then((r) => { return true; })
+        .catch((e) => {
+            redirectLogin();
+        })
+    ;
+}
+
 function mutateIdentity(sess, cb) {
     const idty = openBox(sess.box, sess.userSeed);
     cb(idty);
@@ -174,3 +195,4 @@ function formatScope(scope) {
 
     return r;
 }
+
