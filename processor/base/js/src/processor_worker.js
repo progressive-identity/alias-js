@@ -89,10 +89,12 @@ class Handlers {
         // Create readers
         let inps = args.inp.map((inp) => {
             // XXX TODO with mimetypes !
+
             let archiveCls;
-            if (inp.url.endsWith(".zip")) {
+            const name = inp.originalFileName || inp.url;
+            if (name.endsWith(".zip")) {
                 archiveCls = alias.ZipArchiveReader;
-            } else if (inp.url.endsWith(".tar.gz") || inp.url.endsWith(".tgz")) {
+            } else if (name.endsWith(".tar.gz") || name.endsWith(".tgz")) {
                 archiveCls = alias.TarGzArchiveReader;
             } else {
                 throw "unknown archive type";

@@ -63,42 +63,19 @@ router.post('/unlink', authed, (req, res) => {
     redis.db.hdel(redis.key("user", req.alias.publicKey), "gdrive").then(() => res.json());
 });
 
-router.get('/debug', authed, (req, res) => {
-    (async () => {
-        let token = await getToken(req.alias.publicKey);
-        let auth = oauth2Client(req.alias.publicKey, token);
-        const drive = google.drive({version: 'v3', auth});
-
-        const r = await drive.files.list({
-            q: "name contains 'takeout-' and (name contains '.zip' or name contains '.tgz')",
-            //q: "name contains 'debug'",
-            spaces: "drive",
-            //fields: 'nextPageToken, files(*)',
-            //fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink)',
-            fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink)',
-            orderBy: 'modifiedTime desc',
-        });
-
-        res.json(r);
-    })();
-});
-
 router.get('/cb', authed, (req, res) => {
     const code = req.query.code;
     if (!code) {
         return res.status(400).send({error: "no code"});
     }
 
-    console.log(code);
-
     oauth2Client(req.alias.publicKey, null)
         .getToken(code)
         .then((r) => {
-            console.log(r.tokens);
             return setToken(req.alias.publicKey, r.tokens);
         })
         .then(() => {
-            res.redirect("/");
+            res.redirect("/home/");
         })
         .catch((err) => {
             return res.status(500).send({error: "error", reason: err});
@@ -108,27 +85,18 @@ router.get('/cb', authed, (req, res) => {
 
 async function listDumps(publicKey) {
     const token = await getToken(publicKey);
+    if (!token) {
+        return [];
+    }
+
     const drive = gdriveClient(publicKey, token);
 
     const listGoogleTakeouts = drive.files.list({
         q: "name contains 'takeout-' and (name contains '.zip' or name contains '.tgz')",
-        //q: "name contains 'debug'",
         spaces: "drive",
-        //fields: 'nextPageToken, files(*)',
-        //fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink)',
-        fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink)',
+        fields: 'nextPageToken, files(id, name, modifiedTime, size, webViewLink, mimeType)',
         orderBy: 'modifiedTime desc',
     });
-
-    /*const listDumps = drive.files.list({
-        q: "'Alias' in parents and (name contains '.zip' or name contains '.tgz')",
-        spaces: "drive",
-        fields: 'nextPageToken, files(*)',
-        orderBy: 'modifiedTime desc',
-    });*/
-
-    //const r = await Promise.all([listGoogleTakeouts]);
-    //const takeouts = r[0];
 
     const takeouts = await listGoogleTakeouts;
 
@@ -141,6 +109,8 @@ async function listDumps(publicKey) {
                 "Authorization": "Bearer " + token.access_token,
             },
             size: r.size,
+            originalFileName: r.name,
+            mimeType: r.mimeType,
         };
 
         return r;
@@ -152,7 +122,6 @@ async function listDumps(publicKey) {
         v.provider = "google";
         res.push(v);
     }
-    //res.push(...dumps.data.files.map(fileMapper));
     return res;
 }
 

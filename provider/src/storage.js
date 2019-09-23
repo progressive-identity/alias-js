@@ -32,8 +32,8 @@ async function getDumps(publicKey) {
         });
     }
 
-    //const drive = await gdrive.listDumps(publicKey);
-    //dumps.push(...drive);
+    const drive = await gdrive.listDumps(publicKey);
+    dumps.push(...drive);
 
     const r = {};
     for (let d of dumps) {
