@@ -8,6 +8,7 @@ services:
         command: "sh -c \"(cd provider && nodemon src/app.js)\""
         volumes:
             - ../:/alias
+            - ../data/provider.config.json:/config/provider.config.json
 
         links:
             - redis.provider.alias
