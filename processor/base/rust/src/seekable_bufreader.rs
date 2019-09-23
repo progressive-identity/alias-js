@@ -125,7 +125,7 @@ where
                     self.offset = self.size;
                 }
 
-                debug!("seek offset {}", self.offset);
+                //debug!("seek offset {}", self.offset);
 
                 Ok(self.offset as u64)
             }

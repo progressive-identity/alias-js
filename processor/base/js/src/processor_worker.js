@@ -100,7 +100,6 @@ class Handlers {
                 throw "unknown archive type";
             }
 
-            console.log(inp, archiveCls);
             const fh = new alias.file.UrlReaderSync(inp);
             const archive = new archiveCls(fh);
             return archive;
