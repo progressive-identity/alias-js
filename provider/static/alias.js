@@ -55,6 +55,18 @@ function saveBox(user, passHash, box) {
     });
 }
 
+function createBox(user, passHash, box) {
+    return $.ajax({
+        method: 'POST',
+        url: '/api/user',
+        data: {
+            username: user,
+            publicPwdHash: sodium.to_base64(passHash),
+            box: box,
+        }
+    });
+}
+
 function getBox(user, passHash) {
     return $.ajax({
         method: 'GET',

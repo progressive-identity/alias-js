@@ -9,10 +9,7 @@ $("#create_account form").on("submit", () => {
 
     const idty = createIdentity(username);
     const box = sealBox(idty, userSeed);
-    saveBox(username, passHash, box)
-        .catch(() => {
-            alert("you cannot create an account with this username");
-        })
+    createBox(username, passHash, box)
         .then(() => {
             setSession(username, userSeed, passHash, box);
 
@@ -20,6 +17,9 @@ $("#create_account form").on("submit", () => {
         })
         .then(() => {
             redirect();
+        })
+        .catch(() => {
+            alert("you cannot create an account with this username");
         })
     ;
 
