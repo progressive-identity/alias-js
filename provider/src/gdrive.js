@@ -50,7 +50,8 @@ function gdriveClient(publicKey, token) {
 router.get('/link', authed, (req, res) => {
     const drive = oauth2Client(req.alias.publicKey, null);
     const authUrl = drive.generateAuthUrl({
-        access_type: 'online',
+        access_type: 'offline',
+        prompt: 'consent',
         scope: [
             'https://www.googleapis.com/auth/drive.readonly',
         ]
