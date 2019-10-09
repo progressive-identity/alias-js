@@ -1,41 +1,142 @@
 <html>
     <head>
+        <meta charset="utf-8">
         <title>🔒 Alias - Sign-in</title>
 
 
-        <script type="application/javascript" src="/jquery-3.4.1.min.js"></script>
-        <script type="application/javascript" src="/header.js"></script>
-        <script type="application/javascript" src="/sodium.js"></script>
-        <script type="application/javascript" src="/anychain.js"></script>
-        <script type="application/javascript" src="/alias.js"></script>
+        <link href="../css/normalize.css" rel="stylesheet" type="text/css">
+        <link href="../css/webflow.css" rel="stylesheet" type="text/css">
+        <link href="../css/data-card-beta.webflow.css" rel="stylesheet" type="text/css">
 
-        <style>
+
+        <script type="application/javascript" src="../jquery-3.4.1.min.js"></script>
+        <script type="application/javascript" src="../header.js"></script>
+        <script type="application/javascript" src="../sodium.js"></script>
+        <script type="application/javascript" src="../anychain.js"></script>
+        <script type="application/javascript" src="../alias.js"></script>
+
+
+<!--         <style>
             html, body {
-                font-family: 'Roboto', sans-serif;
+              font-family: 'Open Sans', sans-serif;
+              color: #3f3d56;
+              font-size: 0.9em;
             }
-        </style>
+        </style> -->
     </head>
 
-    <body>
-        <h1>🔒 Sign in</h1>
+    <body class="body-2">
 
-        <div id="login">
-            <h2>Login</h2>
-            <form>
-                <input type="text" placeholder="Username"></input>
-                <input type="password" placeholder="Your password"></input>
-                <button>Login</button>
-            </form>
-        </div>
 
-        <div id="create_account">
-            <h2>Create an identity</h2>
-            <form>
-                <input type="text" placeholder="Username"></input>
-                <input type="password" placeholder="A strong password..."></input>
-                <button>Generate a new identity</button>
-            </form>
+      <div data-collapse="medium" data-animation="default" data-duration="400" class="navbar w-nav">
+    <div class="container-main">
+      <nav role="navigation" class="w-nav-menu">
+          <a href="https://medium.com/@gdprtoken" class="nav-link w-nav-link"><strong>Blog</strong></a>
+          <a href="mailto:team@gdpr.dev" class="nav-link w-nav-link"><strong>Contact</strong></a>
+          <a href="#faq" class="nav-link w-nav-link"><strong>FAQ</strong></a>
+      </nav>
+      <a href="https://gdpr.dev/" class="nav-link-copy w-nav-link"><strong>ALIAS</strong></a>
+    </div>
+  </div>
+
+
+      <div class="body-container">
+        <div class="left-body-container">
+          <div id="login">
+              <h2 class="heading-5">Login</h2>
+              <form>
+                  <input type="text" class="text-field" placeholder="Username"></input>
+                  <input type="password" class="text-field" placeholder="Your password"></input>
+                  <button class="button secondary full-width">Login</button>
+              </form>
+          </div>
+          <div id="create_account">
+              <h2 class="heading-5">Sign in</h2>
+              <form>
+                  <input type="text" class="text-field" placeholder="Username"></input>
+                  <input type="password" class="text-field" placeholder="A strong password..."></input>
+                  <button class="button secondary full-width">Generate a new identity</button>
+              </form>
+          </div>
         </div>
+        <div class="right-body-container">
+          <!-- <img src="../images/undraw_authentication_fsn5.png" alt="login"> -->
+          <img src="../images/Group-22.svg" style="padding-top:25px;" alt="login">
+
+        </div>
+      </div>
+
+
+        <div class="footer">
+    <div class="container footer-upper">
+      <div class="row-2 footer-row">
+        <div class="column-13 footer-left-column">
+          <h3 class="heading-10">Secure your data</h3>
+          <img src="../images/undraw_safe_bnk7.png" height="200" alt="">
+        </div>
+        <div class="column-13">
+          <div class="menu-column">
+            <h4>Information</h4>
+            <ul class="menu-column-list w-list-unstyled">
+              <li class="menu-column-list-item">
+                <a href="https://medium.com/@gdprtoken" data-w-id="61b8ee1e-f690-78f6-1c71-ff4da8356cab" class="underline-link underline-link-white w-inline-block">
+                  <div>Blog</div>
+                  <div class="underline-container">
+                    <div class="underline-track underline-track-white"></div>
+                    <div class="underline-progress underline-progress-white"></div>
+                  </div>
+                </a>
+              </li>
+              <li class="menu-column-list-item">
+                <a href="#faq" data-w-id="61b8ee1e-f690-78f6-1c71-ff4da8356cb9" class="underline-link underline-link-white w-inline-block">
+                  <div>FAQ</div>
+                  <div class="underline-container">
+                    <div class="underline-track underline-track-white"></div>
+                    <div class="underline-progress underline-progress-white"></div>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="column-13">
+          <div class="menu-column">
+            <h4>Company</h4>
+            <ul class="menu-column-list w-list-unstyled">
+              <li class="menu-column-list-item">
+                <a href="mailto:team@gdpr.dev" data-w-id="61b8ee1e-f690-78f6-1c71-ff4da8356cd3" class="underline-link underline-link-white w-inline-block">
+                  <div>Contact</div>
+                  <div class="underline-container">
+                    <div class="underline-track underline-track-white"></div>
+                    <div class="underline-progress underline-progress-white"></div>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-lower">
+      <div class="container">
+        <div class="row-2 text-small info-bar-row">
+          <div class="column-13 footer-details-column">
+            <div>©2019 Designed by <a href="https://webflow.com/thinkrs" target="_blank" class="text-white">Thinkrs</a>
+            </div>
+            <ul class="menu-row w-list-unstyled">
+            </ul>
+          </div>
+          <div class="column-13">
+            <ul class="social-links-list w-list-unstyled">
+              <li class="social-links-list-item">
+                <a href="https://twitter.com/gdprtoken" class="social-link social-link-white w-inline-block"><img src="https://uploads-ssl.webflow.com/5cd1a062755d001647eb245d/5cd1a062755d00491feb249e_social-twitter.svg" alt="" class="social-link-image"></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
         <script type="application/javascript" src="index.js"></script>
     </body>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 56.3 (81716) - https://sketch.com -->
+    <title>Icon/Outline/checkmark</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <path d="M9.8633,18 C9.5873,18 9.3233,17.886 9.1343,17.685 L4.2713,12.506 C3.8923,12.104 3.9133,11.471 4.3153,11.093 C4.7183,10.715 5.3513,10.735 5.7283,11.137 L9.8533,15.528 L18.2613,6.326 C18.6353,5.917 19.2673,5.89 19.6753,6.262 C20.0823,6.634 20.1103,7.267 19.7383,7.674 L10.6013,17.674 C10.4143,17.88 10.1483,17.998 9.8703,18 L9.8633,18 Z" id="path-1"></path>
+    </defs>
+    <g id="Icon/Outline/checkmark" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <mask id="mask-2" fill="white">
+            <use xlink:href="#path-1"></use>
+        </mask>
+        <use id="Mask" fill="#231F20" xlink:href="#path-1"></use>
+        <g id="Icon/Color/Base" mask="url(#mask-2)" fill="#424B5A">
+            <rect id="Base" x="0" y="0" width="24" height="24"></rect>
+        </g>
+    </g>
+</svg>

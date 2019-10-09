@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 56.3 (81716) - https://sketch.com -->
+    <title>remove_circle</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="The-Icon-of---Actions" transform="translate(-232.000000, -1342.000000)" fill="#FFFFFF" fill-rule="nonzero">
+            <g id="ico-/-24-/-actions-/-remove_circle" transform="translate(230.000000, 1340.000000)">
+                <path d="M12,2 C6.4771525,2 2,6.4771525 2,12 C2,17.5228475 6.4771525,22 12,22 C17.5228475,22 22,17.5228475 22,12 C22,9.3478351 20.9464316,6.80429597 19.0710678,4.92893219 C17.195704,3.0535684 14.6521649,2 12,2 Z M8.5,13 C8.22385763,13 8,12.7761424 8,12.5 L8,11.5 C8,11.2238576 8.22385763,11 8.5,11 L15.5,11 C15.7761424,11 16,11.2238576 16,11.5 L16,12.5 C16,12.7761424 15.7761424,13 15.5,13 L8.5,13 Z" id="Icon-color"></path>
+            </g>
+        </g>
+    </g>
+</svg>

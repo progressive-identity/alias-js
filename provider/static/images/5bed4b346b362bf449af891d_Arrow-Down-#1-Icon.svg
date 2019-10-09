@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="9px" viewBox="0 0 16 9" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>Arrow-Down-#1-Icon</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="5aeb1806e1516c7500816e0e_hero-arrow-down-icon" fill="#096AD0" fill-rule="nonzero">
+            <path d="M12.5,4.49962499 C12.5,4.09866889 12.3423722,3.72171009 12.0570459,3.43974099 L5.22417899,-3.20753201 C4.82911179,-3.59748931 4.19061939,-3.59748931 3.79555219,-3.20753201 C3.40148259,-2.81657471 3.40148259,-2.18364401 3.79555219,-1.79368661 L10.2722599,4.49962499 L3.79555219,10.7929367 C3.40148259,11.1828941 3.40148259,11.8158248 3.79555219,12.2067821 C4.19061939,12.5977393 4.82911179,12.5977393 5.22417899,12.2067821 L12.0570459,5.56050899 C12.3423722,5.27654009 12.5,4.90158109 12.5,4.49962499 Z" id="Arrow-Down-#1-Icon" transform="translate(8.000000, 4.500000) rotate(90.000000) translate(-8.000000, -4.500000) "></path>
+        </g>
+    </g>
+</svg>
