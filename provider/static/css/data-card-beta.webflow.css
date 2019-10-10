@@ -859,7 +859,7 @@
 .heading-4 {
   margin-top: 0px;
   margin-bottom: 20px;
-  font-family: 'Droid Serif', serif;
+  font-family: 'Droid Serif', sans-serif;
 }
 
 .quote {
@@ -900,7 +900,7 @@
 
 .heading-5 {
   margin-top: 0px;
-  font-family: 'Droid Serif', serif;
+  font-family: 'Droid Serif', sans-serif;
   color: #2f2e41;
 }
 
