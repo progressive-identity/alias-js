@@ -662,10 +662,14 @@
 }
 
 .body-2 {
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'Droid', sans-serif;
   color: #3f3d56;
   font-size: 0.9em;
 }
+
+/*h3:hover {
+  color: red;
+}*/
 
 .button {
   display: -webkit-box;
