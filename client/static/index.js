@@ -1,4 +1,5 @@
-const chain = new Anychain();
+const chain = new Anychain.Chain();
+chain.registerValidator(AliasChains.validators);
 
 function run() {
     const selfURL = new URL(window.location.href);
@@ -18,8 +19,10 @@ function run() {
             const contract = chain.fromJSON(r);
 
             Alias.request(aliasID, contract).catch((e) => {
-                alert(e);
+                alert(`request failed: ${e}`);
             });
+        }).catch(function(e) {
+            console.error(e);
         });
 
         return false;

@@ -7,6 +7,7 @@
         <script type="application/javascript" src="/header.js"></script>
         <script type="application/javascript" src="/sodium.js"></script>
         <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/aliasChains.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 
         <style>
@@ -43,10 +44,11 @@
             <div v-if="grant">
                 <ul>
                     <li>Hash: <code>{{ grantHash }}</code></li>
+                    <li>Contract Hash: <code>{{ contractHash }}</code></li>
                     <li>Signer: <code>{{ grantJSON.signer.__bytes }}@{{ bind.body.domain }}</code></li>
-                    <li>Date: {{ grant.date }}</li>
+                    <li>Date: {{ niceGrantDate }}</li>
                     <li>Scopes: <ul>
-                        <li v-for="s in grant.body.scopes"><code>{{ s }}</code></li>
+                        <li v-for="s in scopes"><code>{{ s }}</code></li>
                     </ul></li>
                 </ul>
 

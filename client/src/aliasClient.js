@@ -8,8 +8,11 @@ const path = require('path');
 const rimraf = require('rimraf');
 const util = require('util');
 const {asyncMiddleware} = require('./utils.js');
+const aliasChains = require('./aliasChains.js')
+const url = require('url');
 
-global.chain = new Anychain();
+global.chain = new Anychain.Chain();
+global.chain.registerValidator(aliasChains.validators);
 
 const execProcessAsync = util.promisify(child_process.exec);
 
@@ -49,6 +52,8 @@ class AliasClient {
             }));
         });
 
+        // receive a new grant. register it if unknown or newer than an already
+        // known one.
         router.post('/alias/grant', asyncMiddleware(async (req, res) => {
             const grant = chain.fromToken(req.body.grant);
             const bind = chain.fromToken(req.body.bind);
@@ -57,30 +62,41 @@ class AliasClient {
             res.json({});
         }));
 
-        router.put('/alias/push/:grantHash', asyncMiddleware(async (req, res) => {
-            const grant = chain.fromJSON(req.body);
-            if (chain.fold(grant).base64() !== req.params.grantHash) {
+        // called by provider when a new transfer is about to start. clear all
+        // past data.
+        router.put('/alias/push/:contractHash', asyncMiddleware(async (req, res) => {
+            const grant = chain.fromToken(req.body.grant);
+            const contractHash = req.params.contractHash;
+
+            if (!chain.isSignature(grant, "alias.grant")) {
+                return res.status(400).json({status: "error", reason: "not a grant"});
+            }
+
+            if (chain.fold(grant.body.contract).base64() !== contractHash) {
                 return res.status(400).json({status: "error", reason: "bad grant hash"});
             }
 
             await this.saveGrant(grant);
-            await this.clearGrantData(grant);
+            await this.clearContractData(contractHash);
+
             res.send();
         }));
 
-        router.post('/alias/push/:grantHash', asyncMiddleware(async (req, res) => {
-            const grantHash = req.params.grantHash;
+        // called by provider when a new transfer is finished.
+        router.post('/alias/push/:contractHash', asyncMiddleware(async (req, res) => {
+            const contractHash = req.params.contractHash;
 
             if (this.opts.onNewPush) {
-                const grant = await this.getGrant(grantHash);
+                const grant = await this.getGrantByContractHash(contractHash);
                 this.opts.onNewPush(grant);
             }
 
             res.send();
         }));
 
-        router.put('/alias/push/:grantHash/:filename', asyncMiddleware(async (req, res) => {
-            const grantHash = req.params.grantHash;
+        // called by provider to upload chunks of data for a particular file
+        router.put('/alias/push/:contractHash/:filename', asyncMiddleware(async (req, res) => {
+            const contractHash = req.params.contractHash;
             const filename = req.params.filename;
 
             if (req.headers['content-type'] !== 'application/octet-stream') {
@@ -100,12 +116,14 @@ class AliasClient {
                 }
             }
 
-            await this.saveGrantData(grantHash, filename, startOffset, req.body);
+            await this.writeContractData(contractHash, filename, startOffset, req.body);
             res.send();
         }));
 
-        router.post('/alias/push/:grantHash/:filename', asyncMiddleware(async (req, res) => {
-            const grantHash = req.params.grantHash;
+        // called by provider to notify transfer for particular file is
+        // finished.
+        router.post('/alias/push/:contractHash/:filename', asyncMiddleware(async (req, res) => {
+            const contractHash = req.params.contractHash;
             const filename = req.params.filename;
 
             // XXX
@@ -121,26 +139,30 @@ class AliasClient {
     get privateRouter() {
         const router = express.Router();
 
-        router.use("/alias/grant/:grantHash/data/", asyncMiddleware(async (req, res, next) => {
+        // called by frontend to get the list of data currently stored for a
+        // given contract.
+        router.use("/alias/contract/:contractHash/data/", asyncMiddleware(async (req, res, next) => {
+            const contractHash = req.params.contractHash;
+            const contractPath = this._contractPath(contractHash);
+
             const force = req.method == 'POST';
             try {
-                    await this.fetch(req.params.grantHash, {
+                    await this.fetch(contractHash, {
                     force: force,
                 });
             } catch(e) {
+                console.error("error while fetching:", e);
                 return res.status(404).json({status: "error", reason: e});
             }
-            const rootPath = this.getDataPath(req.params.grantHash);
-
             const basePath = decodeURIComponent(req.originalUrl.substr(req.baseUrl.length)); // XXX TODO this is dirty
 
-            const filePath = this.getFilePath(req.params.grantHash, basePath);
+            const filePath = path.join(contractPath, "data", basePath);
             const fileStat = await fs.promises.lstat(filePath);
 
             // if directory, returns a list of files. if not, returns the file
             // content.
             if (fileStat.isDirectory()) {
-                const r = await this.browse(req.params.grantHash, basePath);
+                const r = await this.browse(contractHash, basePath);
                 res.json({status: "ok", "resources": r});
             } else {
                 const fh = fs.createReadStream(filePath);
@@ -152,61 +174,92 @@ class AliasClient {
         return router;
     }
 
-    // returns the base path for a given grant
-    _grantPath(grantHash) {
-        return path.join(this.opts.dataPath, "grant", grantHash);
+    // returns the base path for a given contract
+    _contractPath(contractHash) {
+        return path.join(this.opts.dataPath, "contract", contractHash);
     }
 
     // persistently store a grant and a bind token
     async saveGrant(grant, bind) {
-        const grantPath = this._grantPath(chain.fold(grant).base64());
-        await fs.promises.mkdir(path.join(grantPath, "data"), { recursive: true });
+        const contract = grant.body.contract;
+        const contractHash = chain.fold(contract).base64();
+        const contractPath = this._contractPath(contractHash);
 
-        const grantTokenPath = path.join(grantPath, "token");
+        // compare to current grant, and if not newer, abort
+        const oldGrant = await this.getGrantByContractHash(contractHash);
+        if (!aliasChains.isGrantNewer(oldGrant, grant)) {
+            return;
+        }
+
+        // create base directory
+        await fs.promises.mkdir(path.join(contractPath, "data"), { recursive: true });
+
+        // if the grant is newer, remove every old data
+        await this.clearContractData(contractHash);
+
+        // write grant token
+        const grantTokenPath = path.join(contractPath, "grant");
         await fs.promises.writeFile(grantTokenPath, chain.toToken(grant));
 
+        // write bind token
         if (bind) {
             // XXX TODO check if bind is older before overwriting it
-            const bindTokenPath = path.join(grantPath, "bind_token");
+            const bindTokenPath = path.join(contractPath, "bind");
             await fs.promises.writeFile(bindTokenPath, chain.toToken(bind));
         }
     }
 
-    // get a grant persistently stored
-    async getGrant(grantHash) {
-        const grantTokenPath = path.join(this._grantPath(grantHash), "token");
-        const token = await fs.promises.readFile(grantTokenPath);
-        const grant = chain.fromToken(token);
+    // get a grant by its contract hash
+    async getGrantByContractHash(contractHash) {
+        const contractPath = this._contractPath(contractHash);
+        const grantTokenPath = path.join(contractPath, "grant");
 
-        let bind = null;
         try {
-            const bindTokenPath = path.join(this._grantPath(grantHash), "bind_token");
-            const bindToken = await fs.promises.readFile(bindTokenPath);
-            bind = chain.fromToken(bindToken);
-        } catch(e) {
-            //
+            const grantToken = await fs.promises.readFile(grantTokenPath);
+            return chain.fromToken(grantToken);
+        } catch (e) {
+            return null;
         }
-
-        const dataPath = path.join(this._grantPath(grantHash), "data");
-        const data = await fs.promises.readdir(dataPath);
-
-        return {
-            grant: grant,
-            bind: bind,
-            data: data,
-        };
     }
 
-    // clear all data related to a given grant
-    async clearGrantData(grant) {
+    // get a bind by its contract hash
+    async getBindByContractHash(contractHash) {
+        const contractPath = this._contractPath(contractHash);
+        const bindTokenPath = path.join(contractPath, "bind");
+
+        try {
+            const bindToken = await fs.promises.readFile(bindTokenPath);
+            return chain.fromToken(bindToken);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // get list of data received for a given contract. Returns null if the
+    // contract is unknown.
+    async getDataByContractHash(contractHash) {
+        const contractPath = this._contractPath(contractHash);
+        const dataPath = path.join(contractPath, "data");
+
+        try {
+            return await fs.promises.readdir(dataPath);
+        } catch(e) {
+            return null;
+        }
+    }
+
+    // clear all data related to a given contract
+    async clearContractData(contractHash) {
+        const contractPath = this._contractPath(contractHash);
         return new Promise((resolve, reject) => {
-            rimraf(path.join(this._grantPath(chain.fold(grant).base64()), "data", "*"), resolve);
+            rimraf(path.join(contractPath, "data", "*"), resolve);
         });
     }
 
-    // save data linked to a grant given its filename and its offset
-    async saveGrantData(grantHash, filename, offset, data) {
-        const dataPath = path.join(this._grantPath(grantHash), "data", filename);
+    // save data linked to a contract given its filename and its offset
+    async writeContractData(contractHash, filename, offset, data) {
+        const contractPath = this._contractPath(contractHash);
+        const dataPath = path.join(contractPath, "data", filename);
 
         const fh = await fs.promises.open(dataPath, "a+");
         try {
@@ -217,62 +270,75 @@ class AliasClient {
         }
     }
 
-    // fetch the data from the authorization server. Will block until the data
-    // is stored.
-    async fetch(grantHash, opts) {
+    // Will fetch data for a contract. If the data is cached, it is not
+    // re-downloaded except if opts.force is set to true. Will block until the
+    // data is received and ready to be used.
+    async fetch(contractHash, opts) {
         opts = opts || {};
         opts.force = opts.force != null ? opts.force : false;
 
-        const {grant, bind, data} = await this.getGrant(grantHash);
+        // check if data is present
+        const data = await this.getDataByContractHash(contractHash);
+        if (data.length > 0 && !opts.force) {
+            return;
+        }
+
+        // reload data
+        const bind = await this.getBindByContractHash(contractHash);
+        if (bind == null) {
+            throw `no bind linked to contract ${contractHash}`;
+        }
+
+        const grant = await this.getGrantByContractHash(contractHash);
+        if (grant == null) {
+            throw `no grant linked to contract ${contractHash}`;
+        }
+
+        if (grant.revoked) {
+            throw `contract ${contractHash} is revoked`;
+        }
+
         const processURL = bind.body.origin + "/alias/process";
+        const body = new url.URLSearchParams();
+        body.append('grant', chain.toToken(grant));
+        const r = await fetch(processURL, {
+            method: 'POST',
+            body: body,
+        });
 
-        if (data.length == 0 || opts.force) {
-            const r = await fetch(processURL, {
-                method: 'POST',
-                body: chain.toToken(grant),
-                headers: {
-                    "Content-Type": "application/json",
-                },
+        const resJson = await r.json();
+        if (resJson.status == "error") {
+            throw `provider error while fetching: ${resJson.reason}`;
+        }
+
+        // did any processing happened?
+        if (resJson.processor.length == 0) {
+            return;
+        }
+
+        const contractPath = this._contractPath(contractHash);
+        const filePath = path.join(contractPath, "data");
+
+        // XXX TODO better handling of extract of data
+
+        try {
+            await execProcessAsync('tar xfz root.tar.gz && rm root.tar.gz', {
+                cwd: filePath,
             });
-
-            const resJson = await r.json();
-            if (resJson.status == "error") {
-                throw resJson.reason;
-            }
-
-            // did any processing happened?
-            if (resJson.processor.length == 0) {
-                return;
-            }
-
-            const grantPath = this._grantPath(grantHash);
-            const dataPath = path.join(grantPath, "data");
-
-            // XXX TODO better handling of extract of data
-
-            try {
-                await execProcessAsync('tar xfz root.tar.gz && rm root.tar.gz', {
-                    cwd: path.join(grantPath, "data"),
-                });
-            } catch(e) {
-                console.error(e);
-            }
+        } catch(e) {
+            console.error("error while extracting data", e);
         }
     }
 
-    getDataPath(grantHash) {
-        return path.join("grants", grantHash, "data");
-    }
-
     // returns a list of file paths recursively stored in a given path for a
-    // given grant.
-    async browse(grantHash, basePath) {
+    // given contract.
+    async browse(contractHash, basePath) {
         basePath = basePath || "";
+        const contractPath = this._contractPath(contractHash);
 
         // XXX TODO better handling of extract of data
-        const grantPath = this._grantPath(grantHash);
         const r = await execProcessAsync('find .', {
-            cwd: path.join(grantPath, "data", basePath),
+            cwd: path.join(contractPath, "data", basePath),
         });
 
         const listing = r.stdout.split("\n")
@@ -280,10 +346,6 @@ class AliasClient {
             .map(p => p.substr(2));
 
         return listing;
-    }
-
-    getFilePath(grantHash, basePath) {
-        return path.join(this._grantPath(grantHash), "data", basePath);
     }
 }
 

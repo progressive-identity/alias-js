@@ -47,6 +47,10 @@ $("#login form").on("submit", () => {
         .then(() => {
             redirect();
         })
+        .catch((e) => {
+            console.error("could not login");
+            console.error(e);
+        })
     ;
 
     return false;

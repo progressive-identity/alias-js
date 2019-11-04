@@ -1,4 +1,5 @@
-const chain = new Anychain();
+const chain = new Anychain.Chain();
+chain.registerValidator(AliasChains.validators);
 
 function run() { (async () => {
     let data = {data: null};
@@ -10,16 +11,13 @@ function run() { (async () => {
         data.title = "👎 Grant denied";
 
     } else {
-        const token = selfUrl.searchParams.get('code');
+        const grantToken = selfUrl.searchParams.get('code');
         const bindToken = selfUrl.searchParams.get('bind');
 
-        data.grant = chain.fromToken(token);
-        data.bind = chain.fromToken(bindToken);
-        data.grantHash = chain.fold(data.grant).base64();
-
         try {
-            chain.verify(data.grant);
-            chain.verify(data.bind);
+            data.grant = chain.fromToken(grantToken);
+            data.bind = chain.fromToken(bindToken);
+
             data.forged = false;
             data.title = "👍 Granted";
         } catch(e) {
@@ -28,20 +26,22 @@ function run() { (async () => {
         }
 
         if (!data.forged) {
+            data.contract = data.grant.body.contract;
+            data.grantHash = chain.fold(data.grant).base64();
+            data.contractHash = chain.fold(data.contract).base64();
             data.grantJSON = chain.toJSON(data.grant);
+            data.scopes = AliasChains.getGrantScopes(data.grant);
+            data.niceGrantDate = new Date(data.grant.date);
+            data.fileURL = (fn) => `/alias/contract/${data.contractHash}/data/${fn}`;
 
             await $.ajax({
                 method: 'POST',
                 url: '/alias/grant',
                 data: {
-                    grant: token,
+                    grant: grantToken,
                     bind: bindToken,
                 }
             });
-
-            data.fileURL = (fn) => {
-                return '/alias/grant/' + data.grantHash + "/data/" + fn;
-            };
         }
     }
 
@@ -52,7 +52,7 @@ function run() { (async () => {
         vue.dataError = null;
         $.ajax({
             method: method,
-            url: '/alias/grant/' + data.grantHash + "/data/",
+            url: '/alias/contract/' + data.contractHash + "/data/",
         }).then((r) => {
             vue.data = r;
         }).catch((r) => {

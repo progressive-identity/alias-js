@@ -5,10 +5,13 @@ const cors = require('cors');
 const sodium = require('libsodium-wrappers');
 const Anychain = require('@alias/anychain');
 const {authed, asyncMiddleware} = require('./utils.js');
+const aliasChains = require('./aliasChains.js');
+const url = require('url');
 
 const app = express()
 
-global.chain = new Anychain();
+global.chain = new Anychain.Chain();
+global.chain.registerValidator(aliasChains.validators);
 
 app.use(require('morgan')('tiny'));
 app.use(require('body-parser')());
@@ -27,16 +30,16 @@ app.get('/alias/', cors(), (req, res) => {
 
 const storage = require('./storage.js');
 const processing = require('./processing.js');
-const grants = require('./grant.js');
+const contracts = require('./contract.js');
 const history = require('./history.js');
 
 app.use("/api/user", require('./userHandlers.js'));
 app.use("/api/session", require('./sessionHandlers.js'));
-app.use("/api/grant", grants.router);
+app.use("/api/contract", contracts.router);
 app.use("/api/storage", storage.router);
 
 app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
-    const grantByID = await grants.getGrants(req.alias.publicKey);
+    const grantByID = await contracts.getGrants(req.alias.publicKey);
     const hist = await history.getHistoryRange(req.alias.publicKey, 0, -1);
     const clientByID = {};
 
@@ -44,7 +47,7 @@ app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
     const viewModel = {};
     for (const grantID in grantByID) {
         const grant = grantByID[grantID];
-        for (const scope of grants.getGrantScopes(grant)) {
+        for (const scope of aliasChains.getGrantScopes(grant)) {
             const client = grant.body.contract.client;
             const clientID = chain.fold(client).base64();
 
@@ -73,7 +76,7 @@ app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
 
 app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) => {
     const clientID = req.params.clientID;
-    const grantByID = await grants.getGrants(req.alias.publicKey);
+    const grantByID = await contracts.getGrants(req.alias.publicKey);
     let client = null;
 
     // app > grant
@@ -84,11 +87,15 @@ app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) =
             continue;
         }
 
+        if (grant.body.revoked) {
+            continue;
+        }
+
         client = grant.body.contract.client;
 
         viewModel.push({
             grant: grant,
-            scopes: grants.getGrantScopes(grant),
+            scopes: aliasChains.getGrantScopes(grant),
         });
     }
 
@@ -104,17 +111,15 @@ app.get("/api/view/client/:clientID", authed, asyncMiddleware(async (req, res) =
 
 app.post("/alias/process", asyncMiddleware(async (req, res) => {
     try {
-        var grant = chain.fromJSON(req.body);
-        if (!chain.isSignature(grant) || grant.body.type != "alias.grant") {
-            throw "expect a token 'alias.grant'";
+        var grant = chain.fromToken(req.body.grant);
+        if (!chain.isSignature(grant, "alias.grant")) {
+            throw "expected a 'alias.grant' token";
         }
 
-        const rev = await grants.getGrantRevocation(grant);
-        if (rev) {
-            throw "revoked";
-        }
-
+        // check if there's a more up-to-date grant
+        grant = await contracts.updateGrant(grant);
     } catch(e) {
+        console.error("error before processing new grant:", e);
         return res.status(400).send({status: "error", reason: e});
     }
 
@@ -124,20 +129,19 @@ app.post("/alias/process", asyncMiddleware(async (req, res) => {
 
     // list scopes by providers
     const scopesByProvider = {};
-    for (const scope of grants.getGrantScopes(grant)) {
+    for (const scope of aliasChains.getGrantScopes(grant)) {
         const provider = scope.provider;
         scopesByProvider[provider] = scopesByProvider[provider] || [];
         scopesByProvider[provider].push(scope);
     }
 
-    const pushURL = grants.getGrantPushURL(grant);
-    await fetch(pushURL, {
-        method: 'PUT',
-        body: chain.toToken(grant),
-        headers: {
-            "Content-Type": "application/json",
-        }
-    })
+    console.log(scopesByProvider);
+
+    const contract = grant.body.contract;
+    const pushURL = contracts.getContractPushURL(contract);
+    const body = new url.URLSearchParams();
+    body.append('grant', chain.toToken(grant));
+    await fetch(pushURL, { method: 'PUT', body: body });
 
     const processingCmds = [];
     for (const provider in scopesByProvider) {
@@ -171,7 +175,11 @@ app.post("/alias/process", asyncMiddleware(async (req, res) => {
         body: {"finished": true},
     });
 
-    return res.json({status: 'ok', processor: allProcess});
+    return res.json({
+        status: 'ok',
+        processor: allProcess,
+        grant: chain.toJSON(grant)
+    });
 }));
 
 app.use('/', express.static('static'))

@@ -32,8 +32,8 @@ const vue = new Vue({
                 method: 'POST',
                 url: "/api/storage/" + provider + "/unlink/",
             }).then((r) => {
-                // XXX TODO BUG
                 self.storage[provider] = false;
+                window.location.reload();
             });
         },
         displayClient: function(clientID) {
@@ -41,6 +41,9 @@ const vue = new Vue({
         },
         revokeClient: function(clientID) {
             window.location.href = "/client/revoke/?client=" + clientID;
+        },
+        storageLinkHttp: function() {
+            window.location.href = "/storage/http/";
         },
         clear_identity: function() {
             const resp = prompt("This action CANNOT be undone. Type 'yes' if you are sure.");

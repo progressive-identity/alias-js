@@ -1,8 +1,9 @@
 const PublicSalt = new Uint8Array([120, 91, 218, 28, 75, 140, 142, 94, 53, 23, 72, 39, 190, 221, 210, 152]);
 
-const chain = new Anychain({
+const chain = new Anychain.Chain({
     passwordSalt: PublicSalt,
 });
+chain.registerValidator(AliasChains.validators);
 
 let _publicSeed = null;
 function publicSeed() {
@@ -16,12 +17,12 @@ function publicSeed() {
 
 function userSecretSeed(user, password) {
     const pwdSeed = chain.seedOf(user, 16, publicSeed());
-    return chain.passwordSeed(password, pwdSeed);
+    return chain.seedOfPassword(password, pwdSeed);
 }
 
 function userPublicPassHash(user, password) {
     const pwdSeed = chain.seedOf(user, 16, publicSeed(), "public");
-    return chain.passwordSeed(password, pwdSeed);
+    return chain.seedOfPassword(password, pwdSeed);
 }
 
 function createIdentity(username) {
@@ -95,7 +96,7 @@ function login(sk) {
             return $.ajax({
                 method: "POST",
                 url: "/api/session/login",
-                data: chain.toJSON(r),
+                data: {token: chain.toToken(r)},
             });
         })
         .then((r) => {
@@ -146,7 +147,9 @@ function sealBox(idty, userSeed) {
 function openBox(boxToken, userSeed) {
     const sk = chain.boxSeedKeypair(chain.seedOf(userSeed, 32, "box"));
     const box = chain.fromToken(boxToken);
-    const idty = chain.sealOpen(sk, box);
+    console.log("box", box);
+    const idty = chain.unseal(sk, box);
+    console.log("idty", idty);
     return idty;
 }
 

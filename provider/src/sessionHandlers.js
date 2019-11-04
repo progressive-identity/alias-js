@@ -48,8 +48,8 @@ app.get('/seed', (req, res) => {
 
 app.post('/login', (req, res) => {
     try {
-        const proof = chain.fromJSON(req.body);
-        if (!chain.isSignature(proof)) {
+        const proof = chain.fromToken(req.body.token);
+        if (proof.type != 'anychain.signature') {
             throw "bad proof: not a signature";
         }
 

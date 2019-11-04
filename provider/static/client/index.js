@@ -6,8 +6,8 @@ const vue = new Vue({
         formatScope: formatScope,
     },
     methods: {
-        revokeGrant: function(grant) {
-            let url = "/revoke/?";
+        modifyGrant: function(grant) {
+            let url = "/modify/?";
             url = url + "grant=" + encodeURIComponent(chain.toToken(grant));
             window.location.href = url;
         },
