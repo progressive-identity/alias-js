@@ -63,7 +63,7 @@ app.get('/', userBasicAuth, (req, res) => {
 
 app.put('/', userBasicAuth, (req, res) => {
     if (!req.body.box) {
-        return res.status(400).send();
+        return res.status(400).send({status: 'error', reason: 'missing arguments'});
     }
 
     setAccountBox(req.auth.user, req.auth.password, req.body.box, false)
@@ -76,7 +76,7 @@ app.put('/', userBasicAuth, (req, res) => {
 
 app.post('/', (req, res) => {
     if (!req.body.box || !req.body.username || !req.body.publicPwdHash) {
-        return res.status(400).send();
+        return res.status(400).send({status: 'error', reason: 'missing arguments'});
     }
 
     setAccountBox(req.body.username, req.body.publicPwdHash, req.body.box, true)
