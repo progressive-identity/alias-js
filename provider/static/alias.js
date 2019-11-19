@@ -211,3 +211,15 @@ function formatScope(scope) {
     return r;
 }
 
+function setUserMeta(d) {
+    return $.ajax({
+        method: 'POST',
+        url: '/api/session/meta',
+        contentType: 'application/json',
+        data: JSON.stringify(d),
+    });
+}
+
+function getUserMeta() {
+    return $.ajax('/api/session/meta');
+}

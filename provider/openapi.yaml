@@ -374,6 +374,14 @@ components:
                     description: "Company name behind the client"
                     example: "FooBar Inc."
 
+        user_meta:
+            application/json:
+                schema:
+                    type: object
+                    description: Any kind of metadata linked to the current user
+
+
+
 paths:
     /api/user/:
         get:
@@ -611,6 +619,36 @@ paths:
 
                 '200':
                     description: Current user had been deleted and logged out.
+
+    /api/session/meta:
+        get:
+            summary: Returns metadata linked to the current user.
+            tags:
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Metadata linked to the current user
+                    content:
+                        $ref: '#/components/schemas/user_meta'
+        post:
+            summary: Update metadata linked to the current user.
+            requestBody:
+                content:
+                    $ref: '#/components/schemas/user_meta'
+
+            tags:
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Metadata linked to the current user
+                    content:
+                        $ref: '#/components/schemas/user_meta'
 
     /api/contract/:
         get:
