@@ -778,6 +778,13 @@ paths:
             summary: OAuth 2.0 client's entrypoint to ask for Google Drive access
             tags:
                 - Storage
+            parameters:
+                - name: redirect
+                  description: URL where the users lands when Google Drive returns. By default, `/home/`.
+                  schema:
+                      type: string
+                      example: "/home/"
+
             responses:
                 '401':
                     $ref: '#/components/requests/sessions/responses/401'

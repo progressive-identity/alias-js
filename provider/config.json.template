@@ -16,5 +16,12 @@
         {
             "url": "ws://processor.authz.gdpr.dev.local/"
         }
-    ]
+    ],
+
+    "redirection": {
+        "gdrive": [
+            "^\\/home\\/$",
+        ]
+    }
+
 }

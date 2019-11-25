@@ -25,6 +25,23 @@ function groupBy(o, cb) {
     return r;
 }
 
+function isSafeRedirection(type, url) {
+    const whitelist = config.redirection[type];
+
+    if (!whitelist) {
+        return false;
+    }
+
+    for (const re of whitelist) {
+        if (url.match(new RegExp(re))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 module.exports.asyncMiddleware = asyncMiddleware;
 module.exports.authed = authed;
 module.exports.groupBy = groupBy;
+module.exports.isSafeRedirection = isSafeRedirection;
