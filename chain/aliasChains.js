@@ -271,7 +271,6 @@ const validators = {
 // newGrant may be null.
 function isGrantNewer(oldGrant, newGrant) {
     return oldGrant == null || (
-        !oldGrant.body.revoked &&
         oldGrant.date < newGrant.date
     );
 }
