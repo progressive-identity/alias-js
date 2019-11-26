@@ -1,11 +1,37 @@
+const headerAPIKey = "X-Alias-APIKey";
+const headerPublicKey = "X-Alias-PublicKey";
+
 function authed(req, res, next) {
-    const publicKey = req.session.publicKey;
+    let publicKey = null;
+
+    if (!publicKey &&
+        config.authentication &&
+        config.authentication.session &&
+        req.session.publicKey) {
+        publicKey = chain.fromJSON(req.session.publicKey);
+    }
+
+    if (!publicKey &&
+        config.authentication &&
+        config.authentication.apikey &&
+        req.header(headerAPIKey) == config.authentication.apikey &&
+        req.header(headerPublicKey)) {
+
+        const publicKeyBase64 = req.header(headerPublicKey);
+
+        try {
+            publicKey = sodium.from_base64(req.header(headerPublicKey));
+        } catch (e) {
+            return res.status(400).send({"status": "error", "reason": `bad publickey via ${headerPublicKey}`});
+        }
+    }
+
     if (!publicKey) {
         return res.status(401).send({"status": "error", "reason": "unauthorized"});
     }
 
     req.alias = req.alias || {};
-    req.alias.publicKey = chain.fromJSON(publicKey);
+    req.alias.publicKey = publicKey;
     next();
 }
 

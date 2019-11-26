@@ -4,6 +4,12 @@ info:
     version: 0.1
 
 components:
+    securitySchemes:
+        APIKeyAuth:
+            type: apiKey
+            in: header
+            name: X-Alias-APIKey
+
     requests:
         users:
             responses:
@@ -26,6 +32,18 @@ components:
                                     reason:
                                         type: string
                                         example: "unauthorized"
+
+    parameters:
+        headerPublicKey:
+            name: X-Alias-PublicKey
+            required: false
+            in: header
+            schema:
+                type: string
+                format: byte
+                description: User's public key
+                example: CAGHyttrbAmzbMDzp-vLE9yDj8U5X0X6qB_J-6ZOJen7PeDuupZRAUYTGUDshrYyDMj2lWQC9fkp4XQJveU9WA
+
     schemas:
         box:
             type: object
@@ -655,6 +673,11 @@ paths:
             summary: Returns a list of the current user's signed grants hash.
             tags:
                 - Contract
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+
             responses:
                 '401':
                     $ref: '#/components/requests/sessions/responses/401'
@@ -681,7 +704,10 @@ paths:
             summary: Returns the full signed grant given its hash.
             tags:
                 - Contract
+            security:
+                - APIKeyAuth: []
             parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
                 - name: grantHash
                   in: path
                   schema:
@@ -706,7 +732,10 @@ paths:
             summary: Returns the scopes the given grant allows.
             tags:
                 - Contract
+            security:
+                - APIKeyAuth: []
             parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
                 - name: grantHash
                   in: path
                   schema:
@@ -733,6 +762,10 @@ paths:
             summary: Returns all active storage adapters of the current user
             tags:
                 - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
             responses:
                 '401':
                     $ref: '#/components/requests/sessions/responses/401'
@@ -756,6 +789,10 @@ paths:
             summary: Returns all detected dumps
             tags:
                 - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
             responses:
                 '401':
                     $ref: '#/components/requests/sessions/responses/401'
@@ -778,7 +815,10 @@ paths:
             summary: OAuth 2.0 client's entrypoint to ask for Google Drive access
             tags:
                 - Storage
+            security:
+                - APIKeyAuth: []
             parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
                 - name: redirect
                   description: URL where the users lands when Google Drive returns. By default, `/home/`.
                   schema:
@@ -797,6 +837,10 @@ paths:
             summary: Removes currently active Google Drive integration
             tags:
                 - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
             responses:
                 '401':
                     $ref: '#/components/requests/sessions/responses/401'
@@ -809,6 +853,10 @@ paths:
             summary: Returns the model view for the user's home page
             tags:
                 - View
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
             responses:
                 '401':
                     $ref: '#/components/requests/sessions/responses/401'
