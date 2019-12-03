@@ -185,6 +185,42 @@ function logout() {
     });
 }
 
+function createAccount(username, pwd) {
+    if (username.length == 0 || pwd.length == 0) {
+        throw "username or pwd is not set";
+    }
+
+    const userSeed = userSecretSeed(username, pwd);
+    const passHash = userPublicPassHash(username, pwd);
+
+    const idty = createIdentity(username);
+    const box = sealBox(idty, userSeed);
+    return createBox(username, passHash, box).then(() => {
+        setSession(username, userSeed, passHash, box);
+        return login(idty.sign);
+    }).then(() => {
+        return idty;
+    })
+}
+
+function loginAccount(username, pwd) {
+    if (username.length == 0 || pwd.length == 0) {
+        throw "username or pwd is not set";
+    }
+
+    const passHash = userPublicPassHash(username, pwd);
+    return getBox(username, passHash)
+        .catch((_) => {
+            throw "unknown user or bad password";
+        }).then((box) => {
+            const userSeed = userSecretSeed(username, pwd);
+            const idty = openBox(box, userSeed);
+            setSession(username, userSeed, passHash, box);
+            return login(idty.sign);
+        })
+    ;
+}
+
 function formatScope(scope) {
     let r = scope.provider + "." + scope.path;
 

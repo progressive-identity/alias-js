@@ -10,24 +10,11 @@ $("#create_account form").on("submit", () => {
         return false;
     }
 
-    const userSeed = userSecretSeed(username, pwd);
-    const passHash = userPublicPassHash(username, pwd);
-
-    const idty = createIdentity(username);
-    const box = sealBox(idty, userSeed);
-    createBox(username, passHash, box).then(() => {
-        setSession(username, userSeed, passHash, box);
-
-        return login(idty.sign);
-    }).then(() => {
-        return setUserMeta({
-            email: email,
-        });
-    }).then(() => {
-        redirect();
-    }).catch(() => {
-        alert("you cannot create an account with this username");
-    });
+    createAccount(username, pwd)
+        .then((idty) => console.log("idty", idty))
+        .then(() => redirect())
+        .catch(() => alert("you cannot create an account with this username"))
+    ;
 
     return false;
 });
@@ -38,25 +25,9 @@ $("#login form").on("submit", () => {
     const pwd = passInput.val();
     passInput.val("");
 
-    const passHash = userPublicPassHash(username, pwd);
-
-    getBox(username, passHash)
-        .catch((_) => {
-            alert("unknown user or bad password");
-        })
-        .then((box) => {
-            const userSeed = userSecretSeed(username, pwd);
-            const idty = openBox(box, userSeed);
-            setSession(username, userSeed, passHash, box);
-            return login(idty.sign);
-        })
-        .then(() => {
-            redirect();
-        })
-        .catch((e) => {
-            console.error("could not login");
-            console.error(e);
-        })
+    loginAccount(username, pwd)
+        .then(() => redirect())
+        .catch((e) => alert(e))
     ;
 
     return false;
