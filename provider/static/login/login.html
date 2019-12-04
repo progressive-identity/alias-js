@@ -1,24 +1,48 @@
-
 <html>
   <head>
     <meta charset="utf-8">
     <title>🔒 Alias - Sign-in</title>
 
 
-    <link href="../css/normalize.css" rel="stylesheet" type="text/css">
-    <link href="../css/webflow.css" rel="stylesheet" type="text/css">
-    <link href="../css/data-card-beta.webflow.css" rel="stylesheet" type="text/css">
+    <link href="./normalize.css" rel="stylesheet" type="text/css">
+    <link href="./webflow.css" rel="stylesheet" type="text/css">
+    <link href="./alias-solution.webflow.css" rel="stylesheet" type="text/css">
+
+
+
 
     <script type="application/javascript" src="../jquery-3.4.1.min.js"></script>
     <script type="application/javascript" src="../header.js"></script>
     <script type="application/javascript" src="../sodium.js"></script>
     <script type="application/javascript" src="../anychain.js"></script>
-    <script type="application/javascript" src="../aliasChains.js"></script>
     <script type="application/javascript" src="../alias.js"></script>
   </head>
 
   <body class="body-2">
-    <header
+    <div data-collapse="medium" data-animation="default" data-duration="400" class="nav-bar w-nav">
+  <div class="nav-container w-container">
+    <a href="/" class="brand w-nav-brand">
+      <div class="logo-text">ALIAS</div>
+      <div class="logo-info">UNLOCK YOUR DATA</div>
+    </a>
+    <div class="nav-bar-main">
+      <nav role="navigation" class="nav-menu w-nav-menu">
+        <!-- <%= link_to 'COMMENT ÇA MARCHE', how_path, class: 'nav-link w-nav-link' %>
+        <%= link_to 'NOS SOLUTIONS', usecases_path, class: 'nav-link w-nav-link' %>
+        <%= link_to 'CONTACT', requests_new_path, class: 'nav-link w-nav-link' %>
+        <%= link_to 'LOGIN', users_new_path, class: "button ghost w-button" %> -->
+      </nav>
+      <div class="menu-button w-clearfix w-nav-button">
+        <div class="menu-icon">
+          <div class="menu-icon-line-top"></div>
+          <div class="menu-icon-line-middle"></div>
+          <div class="menu-icon-line-bottom"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- header
       data-collapse="medium"
       data-animation="default"
       data-duration="400"
@@ -45,67 +69,131 @@
           <strong>ALIAS</strong>
         </a>
       </div>
-    </header>
+    </header> -->
 
-    <div class="body-container">
-      <div class="left-body-container">
-        <div id="login">
-          <h2 class="heading-5">Login</h2>
-          <form>
-            <input
-              type="text"
-              class="text-field"
-              placeholder="Username"
-              style="width: 100%;
-margin: 15px 0 15px 0;">
-            </input>
-            <input
-              type="password"
-              class="text-field"
-              placeholder="Your password"
-              style="width: 100%;
-margin: 15px 0 15px 0;">
-            </input>
-            <button class="button secondary full-width">Login</button>
-          </form>
-        </div>
-        <div id="create_account">
-          <h2 class="heading-5">Sign up</h2>
-          <form>
-            <input
-              type="text"
-              id="create_account_username"
-              class="text-field"
-              placeholder="Username"
-              style="width: 100%;
-margin: 15px 0 15px 0;">
-            </input>
-            <input
-              type="text"
-              id="create_account_email"
-              class="text-field"
-              placeholder="Email"
-              style="width: 100%;
-margin: 15px 0 15px 0;">
-            </input>
-            <input
-              type="password"
-              class="text-field"
-              placeholder="A strong password..."
-              style="width: 100%;
-margin: 15px 0 15px 0;">
-            </input>
-            <button class="button secondary full-width">Sign up</button>
-          </form>
+
+
+
+
+
+  <div class="section hero">
+  <div class="container w-container">
+    <div class="w-layout-grid hero-1">
+      <div id="w-node-d2113197e2f9-edabcf65" class="hero-1-left">
+        <div class="txt-hero-1">
+          <div class="title-hero">Bienvenue</div>
+          <p class="paragraph-alias max-hero">Vos données personelles constituent votre capital digital, mais aujourd'hui il se trouve bloqué dans plusieurs plateformes. Alias wallet vous aide à les importer, à les protéger, à les visualiser, à les gérer et à les monétiser pour libérer toute leur valeur.</p>
         </div>
       </div>
-      <div class="right-body-container">
-        <img src="../images/Group-22.svg" style="padding-top:25px;" alt="login">
+      <div class="hero-2-right ">
+        <div class="card-container-login padding-in-25 shadow r-9">
+          <div class="div-google-sign">
+            <h2 class="heading-12"><strong>Essayez notre version Beta</strong></h2>
+            <p class="m-b-20-2">Enrez les infomrations demandées pour avoir accès a notre version beta.</p>
+          </div>
+
+
+          <div class="body-container">
+      <div class="left-body-container">
+               <div id="login">
+          <h2 class="heading-5">Login</h2>
+          <form>
+            <div class="div-field m-b-20">
+
+            <input
+              type="text"
+              class="text-field-3 w-input"
+              placeholder="Votre pseudo">
+            </input>
+            </div>
+            <div class="div-field m-b-20">
+
+            <input
+              type="password"
+              class="text-field-3 w-input"
+              placeholder="Votre mot de passe">
+            </input>
+            </div>
+            <div class="div-field m-b-20">
+
+            <button class="button_p-2 w-button">Login</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
 
-    <footer class="footer">
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="container padding-80 w-container">
+  <div class="f01_top_wrap">
+    <a href="#" class="f01_logo w-nav-brand">
+      <h3 class="heading-14">Alias</h3>
+    </a>
+  </div>
+  <div class="f01_columns w-row">
+    <!-- <div class="f01_column w-col w-col-2 w-col-small-small-stack">
+      <div class="f01_title">Main links</div>
+      <a href="#" class="f01_link">For users</a>
+      <a href="#" class="f01_link">For business</a>
+    </div> -->
+    <div class="f01_column w-col w-col-2 w-col-small-small-stack">
+      <div class="f01_title">About us</div>
+<!--       <%= link_to 'Contact', requests_new_path, class: "f01_link" %>
+ -->      <a href="https://medium.com/@gdprtoken" class="f01_link">Blog</a>
+    </div>
+    <div class="f01_column w-col w-col-2 w-col-small-small-stack">
+      <div class="f01_title">Legal</div>
+<!--       <%= link_to 'Terms and conditions', terms_and_conditions_path, class: "f01_link" %>
+ -->    </div>
+    <div class="f01_column w-col w-col-2 w-col-small-small-stack"></div>
+    <div class="f01_column_right w-col w-col-4 w-col-small-small-stack">
+      <div class="f01_title">Follow Our Socials</div>
+      <div class="f01_social_wrap">
+        <div class="f01_social_circle_c">
+<!--           <%= link_to ('https://github.com/Djoudi21/VOICELAB') do %>
+            <%= image_tag ("icon-github.png") %>
+          <% end %> -->
+        </div>
+        <div class="f01_social_circle">
+<!--           <%= link_to root_path do %>
+            <%= image_tag ("icon-twitter.png") %>
+          <% end %> -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--     <footer class="footer">
       <div class="container footer-upper">
         <div class="row-2 footer-row">
           <div class="column-13 footer-left-column">
@@ -174,7 +262,7 @@ margin: 15px 0 15px 0;">
           </div>
         </div>
       </div>
-    </footer>
+    </footer> -->
   </body>
   <script type="application/javascript" src="index.js"></script>
 </html>
