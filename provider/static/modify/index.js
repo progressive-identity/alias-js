@@ -59,32 +59,53 @@ async function run() {
 
     // check contract
     try {
-        var contract = chain.fromToken(url.searchParams.get('contract'));
+        var grant = chain.fromToken(url.searchParams.get('grant'));
 
-        if (contract.type != 'alias.contract') {
-            throw "not a contract";
+        if (!chain.isSignature(grant, "alias.grant")) {
+            throw "not a grant";
         }
 
     } catch(e) {
-        alert(`ERROR: client sent an invalid contract: ${e}`);
+        alert(`ERROR: invalid grant: ${e}`);
         return;
     };
 
+    const contract = grant.body.contract;
     const hasContractual = contract.base.contractual && contract.base.contractual.scopes.length != 0 && contract.base.contractual.usages.length != 0;
     const hasConsent = contract.base.consent && contract.base.consent.length != 0;
     const hasLegitimate = contract.base.legitimate && contract.base.legitimate.groups.length != 0;
 
-    const draftContract = deepcloneJSON(contract);
-    for (const consent of draftContract.base.consent) {
-        for (const scope of consent.scopes) {
-            scope.agree = false;
+    const draftBase = deepcloneJSON(grant.body.base);
+
+    function newGrant(revoked, base) {
+        let grant = {
+            type: "alias.grant",
+            contract: contract,
+            revoked: revoked,
+        };
+
+        if (!revoked) {
+            grant.base = base;
         }
+
+        grant = chain.sign(idty.sign, grant);
+        console.log(grant);
+
+        $.ajax({
+            method: 'POST',
+            url: '/api/contract/grant',
+            data: chain.toToken(grant),
+            contentType: "application/json",
+        }).then((r) => {
+            window.location.href = "/home/";
+        })
     }
 
     vue = new Vue({
         el: "#popup",
         data: {
-            c: draftContract,
+            c: contract,
+            base: draftBase,
             hasConsent: hasConsent,
             hasContractual: hasContractual,
             hasLegitimate: hasLegitimate,
@@ -94,52 +115,11 @@ async function run() {
             toggleAdvanced: function() {
                 this.showAdvanced = !this.showAdvanced;
             },
-            agree: function() {
-                const consentedScopes = [];
-                for (const consent of this.c.base.consent) {
-                    const scopes = [];
-                    for (const scope of consent.scopes) {
-                        const agreed = scope.agree;
-                        scopes.push(agreed);
-                    }
-                    consentedScopes.push(scopes);
-                }
-
-                const legitimateScopes = [];
-                for (const legitimate of this.c.base.legitimate.groups) {
-                    const scopes = [];
-                    for (const scope of legitimate.scopes) {
-                        // by default, all legitimate are agreed
-                        scopes.push(true);
-                    }
-                    legitimateScopes.push(scopes);
-                }
-
-                let grant = {
-                    type: "alias.grant",
-                    contract: contract,//chain.fold(contract),
-                    revoked: false,
-                    base: {
-                        contractual: true,
-                        consent: consentedScopes,
-                        legitimate: legitimateScopes,
-                    },
-                };
-
-                grant = chain.sign(idty.sign, grant);
-                console.log("grant:", grant);
-
-                $.ajax({
-                    method: 'POST',
-                    url: "/api/contract/grant",
-                    data: chain.toToken(grant),
-                    contentType: "application/json",
-                }).then((r) => {
-                    cbReturn(contract, grant, idty.bind);
-                });
+            saveChanges: function() {
+                newGrant(false, this.base);
             },
-            deny: function() {
-                cbReturnError(contract, "access_denied");
+            revoke: function() {
+                newGrant(true, null);
             },
         }
     });

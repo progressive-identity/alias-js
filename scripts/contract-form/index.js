@@ -1,4 +1,4 @@
-const chain = new Anychain();
+const chain = new Anychain.Chain();
 
 Vue.component("question", {
     props: [

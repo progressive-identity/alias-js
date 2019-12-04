@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const router = express.Router();
 const {google} = require('googleapis');
-const {authed} = require('./utils.js');
+const {authed, isSafeRedirection} = require('./utils.js');
 const redis = require('./redis.js');
 
 function getToken(publicKey) {
@@ -48,13 +48,24 @@ function gdriveClient(publicKey, token) {
 }
 
 router.get('/link', authed, (req, res) => {
+    const redirectUrl = req.query.redirect || "/home/";
+
+    if (!isSafeRedirection('gdrive', redirectUrl)) {
+        return res.status(400).send({status: "error", reason: "bad redirect URL"});
+    }
+
+    const state = {
+        redirectUrl: redirectUrl,
+    };
+
     const drive = oauth2Client(req.alias.publicKey, null);
     const authUrl = drive.generateAuthUrl({
         access_type: 'offline',
         prompt: 'consent',
         scope: [
             'https://www.googleapis.com/auth/drive.readonly',
-        ]
+        ],
+        state: JSON.stringify(state),
     });
 
     res.redirect(authUrl);
@@ -67,7 +78,17 @@ router.post('/unlink', authed, (req, res) => {
 router.get('/cb', authed, (req, res) => {
     const code = req.query.code;
     if (!code) {
-        return res.status(400).send({error: "no code"});
+        return res.status(400).send({status: "error", reason: "no code"});
+    }
+
+    let state = req.query.state;
+    if (!state) {
+        return res.status(400).send({status: "error", reason: "no state"});
+    }
+
+    state = JSON.parse(state);
+    if (!isSafeRedirection('gdrive', state.redirectUrl)) {
+        return res.status(400).send({status: "error", reason: "bad redirect URL"});
     }
 
     oauth2Client(req.alias.publicKey, null)
@@ -76,7 +97,7 @@ router.get('/cb', authed, (req, res) => {
             return setToken(req.alias.publicKey, r.tokens);
         })
         .then(() => {
-            res.redirect("/home/");
+            res.redirect(state.redirectUrl);
         })
         .catch((err) => {
             return res.status(500).send({error: "error", reason: err});

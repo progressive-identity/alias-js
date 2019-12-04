@@ -1,0 +1,899 @@
+openapi: 3.0.0
+info:
+    title: Alias Provider backend API
+    version: 0.1
+
+components:
+    securitySchemes:
+        APIKeyAuth:
+            type: apiKey
+            in: header
+            name: X-Alias-APIKey
+
+    requests:
+        users:
+            responses:
+                '401':
+                    description: The caller should authenticate the request with
+                        the user's name and public password hash.
+
+        sessions:
+            responses:
+                '401':
+                    description: No session is active. See `/api/session/login`.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "error"
+                                    reason:
+                                        type: string
+                                        example: "unauthorized"
+
+    parameters:
+        headerPublicKey:
+            name: X-Alias-PublicKey
+            required: false
+            in: header
+            schema:
+                type: string
+                format: byte
+                description: User's public key
+                example: CAGHyttrbAmzbMDzp-vLE9yDj8U5X0X6qB_J-6ZOJen7PeDuupZRAUYTGUDshrYyDMj2lWQC9fkp4XQJveU9WA
+
+    schemas:
+        box:
+            type: object
+            properties:
+                __box:
+                    type: string
+                    format: byte
+            required:
+                - __box
+
+        signedGrant:
+            type: object
+            properties:
+                type:
+                    type: string
+                    enum: ["anychain.signature"]
+                date:
+                    type: integer
+                    description: "timestamp when the contract was signed"
+                    example: 1574158519
+                signer:
+                    type: object
+                    properties:
+                        __bytes:
+                            type: string
+                            required: true
+                            format: byte
+                            description: Signer's public key encoded in Base64.
+                            example: I-jkKueHiPjYOdyPaXZutYriHzAQ5b6R6yI30m8mQvY
+                signature:
+                    type: object
+                    properties:
+                        __bytes:
+                            type: string
+                            required: true
+                            format: byte
+                            description: Signature encoded in Base64.
+                            example: WMW31LIYhCykfAVUTWG0b-lJqDj5KxbLU0pXfkRAXHzfEoc2NvMOyB4pq0qssq0bL0U_524S0Bh9KttTkT1hDA
+
+                body:
+                    $ref: '#/components/schemas/grant'
+
+        grant:
+            type: object
+            properties:
+                type:
+                    type: string
+                    required: true
+                    enum: ["alias.grant"]
+
+                contract:
+                    $ref: '#/components/schemas/contract'
+
+                revoked:
+                    type: boolean
+                    required: true
+                    example: false
+                    description: Defines if the grant had been revoked. If so, any future grant for the same contract will be ignored.
+
+                base:
+                    type: object
+                    required: true
+                    description: Consent of the user for each legal base
+                    properties:
+                        contractual:
+                            type: boolean
+                            required: true
+                            example: true
+                            description: The user agrees with the contractual clauses. Always true, else the contract is invalid.
+                        consent:
+                            type: array
+                            required: true
+                            items:
+                                type: array
+                                items:
+                                    type: boolean
+                                    description: The user agrees with the consent clause at the same index of the current element.
+                        legitimate:
+                            type: array
+                            required: true
+                            items:
+                                type: array
+                                items:
+                                    type: boolean
+                                    description: The user agrees with the consent clause at the same index of the current element.
+
+        contract:
+            type: object
+            properties:
+                type:
+                    type: string
+                    required: true
+                    enum: ["alias.contract"]
+
+                legal:
+                    type: object
+                    required: true
+                    description: Legal parameters of the contract outside the data access.
+                    properties:
+                        automated_decision:
+                            required: true
+                            type: boolean
+                            description: Are you using these data to generate an automated decision about users?
+
+                        automated_surveillance:
+                            type: boolean
+                            required: true
+                            description: Is there an automated surveillance attached to the data?
+
+                        destination:
+                            description: List all the legal entities or 3rd parties who will be destination of the data
+                            type: array
+                            required: true
+                            items:
+                                type: string
+
+                        email_dpo:
+                            type: string
+                            required: true
+                            description: What is the contact email address of your company Data Protection Officer?
+
+                        evaluation_notation_rating_profiling:
+                            type: boolean
+                            required: true
+                            description: Are you using these data for evaluation, notation, rating, or for profiling activities?
+
+                        innovative_reasonable_expectations:
+                            type: boolean
+                            required: true
+                            description: Are you using these data in a innovative way, or from innovative technologies or innovative organizationnal systems beyond reasonnable expectations of the user?
+
+                        legal_tos_url:
+                            type: string
+                            required: true
+                            description: What is the URL to your User's Terms of Service?
+
+                        mixing_reasonable_expectations:
+                            type: boolean
+                            required: true
+                            description: Are you crossing or mixing these data with others beyond reasonnable expectations that the user should know?
+
+                        storage_duration:
+                            type: string
+                            required: true
+                            description: How long these data will be stored?
+
+                        subprocessors:
+                            description: List all the subprocessors who will be third-party data processors
+                            type: array
+                            required: true
+                            items:
+                                type: string
+
+                        transfer_outside_eea:
+                            type: boolean
+                            required: true
+                            description: Are these data to be transferred outside the European Economic Area (EEA)?
+
+                base:
+                    type: object
+                    required: true
+                    description: Description of what data to access and why for each legal bases
+                    properties:
+                        consent:
+                            type: object
+                            required: true
+                            description: Description of what data to access and why for the legal base 'consent'
+                            properties:
+                                scopes:
+                                    type: array
+                                    required: true
+                                    items:
+                                        $ref: '#/components/schemas/scope'
+                                usages:
+                                    type: array
+                                    required: true
+                                    items:
+                                        $ref: '#/components/schemas/usage'
+                        contractual:
+                            type: object
+                            required: true
+                            description: Description of what data to access and why for the legal base 'contractual'
+                            properties:
+                                scopes:
+                                    type: array
+                                    required: true
+                                    items:
+                                        $ref: '#/components/schemas/scope'
+                                usages:
+                                    type: array
+                                    required: true
+                                    items:
+                                        $ref: '#/components/schemas/usage'
+
+                        legitimate:
+                            type: object
+                            required: true
+                            description: Description of what data to access and why for the legal base 'legitimate'
+                            properties:
+                                reason:
+                                    type: string
+                                    required: true
+                                    description: Main reason for the use of the legitimate legal base.
+                                groups:
+                                    type: array
+                                    required: true
+                                    items:
+                                        type: object
+                                        properties:
+                                            scopes:
+                                                type: array
+                                                required: true
+                                                items:
+                                                    $ref: '#/components/schemas/scope'
+                                            usages:
+                                                type: array
+                                                required: true
+                                                items:
+                                                    $ref: '#/components/schemas/usage'
+
+
+
+                client:
+                    $ref: '#/components/schemas/signedClient'
+
+                network:
+                    type: object
+                    description: "Network metadata. Optional."
+                    properties:
+                        scheme:
+                            type: string
+                            enum: ["http", "https"]
+                            description: URL scheme to contact the client in the base of this contract. By default, 'https'
+                        redirectEndpoint:
+                            type: string
+                            description: URL basepath of the callback of the
+                                client when the provider will have the user's
+                                response on their consent of the current contract.
+
+        scope:
+            type: object
+            properties:
+                provider:
+                    type: string
+                    required: true
+                    description: "Identifier of the source provider for the GDPR data"
+                    example: "google"
+
+                path:
+                    type: string
+                    required: true
+                    description: "Resource path of the data to access. Path is in the namespace of the provider's model"
+                    example: "my_activity.assistant"
+
+                predicates:
+                    type: array
+                    description: "Predicates to apply to exclude non interesting data"
+                    items:
+                        type: string
+                        description: pre-fix expression which is false for data to exclude from the contract
+#                    items:
+#                        - type: string
+#                          id: 1
+#                          description: operator to apply to the next 1 or 2 operands
+#                          enum: ["=", "!=", ">", ">=", "<", "<=", "has"]
+#                        - type: string
+#                          id: 2
+#                          description: name of the field being the first operand of the comparaison.
+#                          example: "date"
+                fields:
+                    anyOf:
+                        - type: string
+                          enum: ["*"]
+                          description: all data
+                        - type: array
+                          description: list of required fields
+                          items:
+                              type: string
+        usage:
+            type: string
+            description: "Human-readable explaination of how the data will be used in the consent legal base."
+
+        signedClient:
+            type: object
+            properties:
+                type:
+                    type: string
+                    required: true
+                    enum: ["anychain.signature"]
+                date:
+                    type: integer
+                    required: true
+                    description: "timestamp when the contract was signed"
+                    example: 1574158519
+
+                signer:
+                    type: object
+                    required: true
+                    properties:
+                        __bytes:
+                            type: string
+                            required: true
+                            format: byte
+                            description: Signer's public key encoded in Base64.
+                            example: I-jkKueHiPjYOdyPaXZutYriHzAQ5b6R6yI30m8mQvY
+                signature:
+                    type: object
+                    required: true
+                    properties:
+                        __bytes:
+                            type: string
+                            required: true
+                            format: byte
+                            description: Signature encoded in Base64.
+                            example: WMW31LIYhCykfAVUTWG0b-lJqDj5KxbLU0pXfkRAXHzfEoc2NvMOyB4pq0qssq0bL0U_524S0Bh9KttTkT1hDA
+
+                body:
+                    $ref: '#/components/schemas/client'
+
+
+        client:
+            type: object
+            properties:
+                type:
+                    type: string
+                    required: true
+                    enum: ["alias.client.decl"]
+                name:
+                    type: string
+                    required: true
+                    description: "Name of the client"
+                    example: "Foobar"
+                desc:
+                    type: string
+                    required: true
+                    description: "Description of the client"
+                    example: "A dummy Alias client"
+                domain:
+                    type: string
+                    required: true
+                    description: "Web domain of the client"
+                    example: "foobar.com"
+                company:
+                    type: string
+                    required: true
+                    description: "Company name behind the client"
+                    example: "FooBar Inc."
+
+        user_meta:
+            application/json:
+                schema:
+                    type: object
+                    description: Any kind of metadata linked to the current user
+
+
+
+paths:
+    /api/user/:
+        get:
+            summary: Returns the user's encrypted data.
+            tags:
+                - User
+            responses:
+                '401':
+                    $ref: '#/components/requests/users/responses/401'
+                '404':
+                    description: The given username does not exist and the
+                        password is incorrect.
+                '200':
+                    description: A anychain's box object, storing the encrypted
+                        data of the user. See `static/login/index.js` for an
+                        example of how to decrypt this data.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/box'
+
+        post:
+            summary: Create an user account.
+            tags:
+                - User
+            parameters:
+                - name: box
+                  required: true
+                  description: Encrypted data of the user creating an account.
+                  schema:
+                    $ref: '#/components/schemas/box'
+
+            responses:
+                '401':
+                    $ref: '#/components/requests/users/responses/401'
+
+                '400':
+                    description: Request is malformed. Missing parameters.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "error"
+                                    reason:
+                                        type: string
+                                        example: "missing arguments"
+
+                '200':
+                    description: Account was successfuly created.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "ok"
+
+        put:
+            summary: Update the encrypted data of an user.
+            tags:
+                - User
+            parameters:
+                - name: box
+                  required: true
+                  description: Encrypted data of the user to be updated.
+                  schema:
+                    $ref: '#/components/schemas/box'
+
+            responses:
+                '401':
+                    $ref: '#/components/requests/users/responses/401'
+
+                '400':
+                    description: Request is malformed. Missing parameters.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "error"
+                                    reason:
+                                        type: string
+                                        example: "missing arguments"
+
+                '200':
+                    description: Account was successfuly updated.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "ok"
+
+        delete:
+            summary: Delete an user.
+            tags:
+                - User
+            responses:
+                '401':
+                    $ref: '#/components/requests/users/responses/401'
+
+                '404':
+                    description: Username is unknown or password is incorrect.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "error"
+
+                '200':
+                    description: Account was successfuly deleted.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "ok"
+
+    /api/session/:
+        get:
+            summary: Returns the current active session.
+            tags:
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Current session
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "ok"
+                                    publicKey:
+                                        type: string
+                                        format: byte
+                                        description: user's public key
+
+    /api/session/seed:
+        get:
+            summary: Returns a seed the client can use to proove it owns the
+                user's private key to the backend. To be used with
+                `/api/session/login`.
+            tags:
+                - Session
+            responses:
+                '200':
+                    description: Current session
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    __bytes:
+                                        type: string
+                                        format: byte
+
+    /api/session/login:
+        post:
+            summary: Login an user, create an active session for the user.
+            tags:
+                - Session
+            parameters:
+                - name: token
+                  in: anychain's signature
+                  required: true
+                  description: Anychain's signature with the user's private key of the latest seed returned by `/api/session/seed`.
+                  schema:
+                    type: string
+                    format: json
+            responses:
+                '400':
+                    description: Request is malformed. Signature is invalid or seed is unknown.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "error"
+                                    reason:
+                                        type: string
+                                        example: "bad proof: seed not valid"
+
+                '200':
+                    description: User is successfuly logged in.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "ok"
+
+    /api/session/logout:
+        post:
+            summary: Logout from the current session.
+            tags:
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Current user had been logged out.
+
+    /api/session/clear:
+        post:
+            summary: Delete the current user's account and log out.
+            tags:
+                - User
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Current user had been deleted and logged out.
+
+    /api/session/meta:
+        get:
+            summary: Returns metadata linked to the current user.
+            tags:
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Metadata linked to the current user
+                    content:
+                        $ref: '#/components/schemas/user_meta'
+        post:
+            summary: Update metadata linked to the current user.
+            requestBody:
+                content:
+                    $ref: '#/components/schemas/user_meta'
+
+            tags:
+                - Session
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Metadata linked to the current user
+                    content:
+                        $ref: '#/components/schemas/user_meta'
+
+    /api/contract/:
+        get:
+            summary: Returns a list of the current user's signed grants hash.
+            tags:
+                - Contract
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: List of current user's signed grants hash.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: "ok"
+                                    result:
+                                        type: array
+                                        items:
+                                            type: string
+                                            format: byte
+                                            description: Signed grant hash
+
+    /api/contract/{grantHash}:
+        get:
+            summary: Returns the full signed grant given its hash.
+            tags:
+                - Contract
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+                - name: grantHash
+                  in: path
+                  schema:
+                      type: string
+                      description: Signed grant hash
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '404':
+                    description: grant is unknown.
+
+                '200':
+                    description: Returns the full signed grant.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/signedGrant'
+
+    /api/contract/{grantHash}/scopes:
+        get:
+            summary: Returns the scopes the given grant allows.
+            tags:
+                - Contract
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+                - name: grantHash
+                  in: path
+                  schema:
+                      type: string
+                      description: Signed grant hash
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '404':
+                    description: grant is unknown.
+
+                '200':
+                    description: Returns the full signed grant.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/scope'
+
+    /api/storage/:
+        get:
+            summary: Returns all active storage adapters of the current user
+            tags:
+                - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    gdrive:
+                                        type: boolean
+                                        example: true
+                                        description: Is Google Drive adapter enabled for this user?
+                                    dropbox:
+                                        type: boolean
+                                        example: false
+
+    /api/storage/dumps:
+        get:
+            summary: Returns all detected dumps
+            tags:
+                - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    google:
+                                        type: array
+                                        description: List of dumps stored in Google
+                                        items:
+                                            type: object
+                                            description: Dump stored on Google Drive
+
+    /api/storage/gdrive/link:
+        get:
+            summary: OAuth 2.0 client's entrypoint to ask for Google Drive access
+            tags:
+                - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+                - name: redirect
+                  description: URL where the users lands when Google Drive returns. By default, `/home/`.
+                  schema:
+                      type: string
+                      example: "/home/"
+
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '301':
+                    description: "redirection to Google's OAuth 2.0 endpoint"
+
+    /api/storage/gdrive/unlink:
+        post:
+            summary: Removes currently active Google Drive integration
+            tags:
+                - Storage
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    description: Integration removed.
+
+    /api/view/index:
+        get:
+            summary: Returns the model view for the user's home page
+            tags:
+                - View
+            security:
+                - APIKeyAuth: []
+            parameters:
+                - $ref: '#/components/parameters/headerPublicKey'
+            responses:
+                '401':
+                    $ref: '#/components/requests/sessions/responses/401'
+
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    grants:
+                                        type: object
+                                        description: Map currently active grants hash to the full grant
+                                        additionalProperties:
+                                            $ref: '#/components/schemas/signedGrant'
+
+                                    clients:
+                                        type: object
+                                        description: Map clients with which the user has contract to to their declaration.
+                                        additionalProperties:
+                                            $ref: '#/components/schemas/signedClient'
+
+                                    history:
+                                        type: array
+                                        description: List of all signed grants by the user. Anti-chronological.
+                                        items:
+                                            $ref: '#/components/schemas/signedGrant'
+
+                                    view:
+                                        type: object
+                                        description: Map all providers mentionned in the active grants
+                                        additionalProperties:
+                                            type: object
+                                            description: Map all resource path mentionned in the active grants
+                                            additionalProperties:
+                                                type: object
+                                                description: Map all active grants
+                                                additionalProperties:
+                                                    type: object
+

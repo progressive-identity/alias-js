@@ -15,17 +15,16 @@ async function run() {
     try {
         var grant = chain.fromToken(url.searchParams.get('grant'));
 
-        if (!isSignature(grant) || grant.body.type !== "alias.grant") {
+        if (!chain.isSignature(grant, "alias.grant")) {
             throw "not a grant";
         }
     } catch(e) {
-        cbReturnError(client, "unauthorized_client");
+        alert(e);
     };
 
-    const hash = chain.fold(grant).base64();
-    const scopes = await $.ajax(`/api/grant/${hash}/scopes`);
-
     const contract = grant.body.contract;
+    const contractHash = chain.fold(contract).base64();
+    const scopes = await $.ajax(`/api/contract/${contractHash}/scopes`);
 
     vue = new Vue({
         el: "#popup",

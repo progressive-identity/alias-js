@@ -1,6 +1,6 @@
 const express = require('express');
 const redis = require('./redis.js');
-const {authed} = require('./utils.js');
+const {authed, asyncMiddleware} = require('./utils.js');
 
 class SeedManager {
     constructor(timeout) {
@@ -48,8 +48,8 @@ app.get('/seed', (req, res) => {
 
 app.post('/login', (req, res) => {
     try {
-        const proof = chain.fromJSON(req.body);
-        if (!chain.isSignature(proof)) {
+        const proof = chain.fromToken(req.body.token);
+        if (proof.type != 'anychain.signature') {
             throw "bad proof: not a signature";
         }
 
@@ -80,5 +80,17 @@ app.post('/clear', authed, (req, res) => {
     });
 });
 
+app.get('/meta', authed, asyncMiddleware(async (req, res) => {
+    const blob = await redis.db.get(redis.key("user", req.alias.publicKey, "meta"));
+    const data = blob ? JSON.parse(blob) : {};
+    res.status(200).send(data);
+}));
+
+app.post('/meta', authed, asyncMiddleware(async (req, res) => {
+    const data = req.body;
+    const blob = JSON.stringify(data);
+    await redis.db.set(redis.key("user", req.alias.publicKey, "meta"), blob);
+    res.status(200).send(data);
+}));
 
 module.exports = app;

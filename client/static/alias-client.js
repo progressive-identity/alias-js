@@ -10,6 +10,7 @@ Alias.request = async function(aliasID, contract) {
     const username = match[1];
     const authzDomain = match[2];
 
+    contract.date = new Date();
     chain.verify(contract);
 
     const r = await $.ajax(`//${authzDomain}/alias/`);

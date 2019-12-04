@@ -6,6 +6,7 @@
         <script type="application/javascript" src="/header.js"></script>
         <script type="application/javascript" src="/sodium.js"></script>
         <script type="application/javascript" src="/anychain.js"></script>
+        <script type="application/javascript" src="/aliasChains.js"></script>
         <script type="application/javascript" src="/alias.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
         <script type="application/javascript" src="/alias-vue.js"></script>
@@ -44,7 +45,7 @@
                     </ul>
 
                     <button v-on:click="showGrant(i.grant)">View more details</button>
-                    <button v-on:click="revokeGrant(i.grant)">Revoke this grant</button>
+                    <button v-on:click="modifyGrant(i.grant)">Modify this grant</button>
                 </div>
             </div>
         </div>
