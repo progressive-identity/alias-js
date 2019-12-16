@@ -4,7 +4,9 @@
         "start": "node app.js"
     },
     "dependencies": {
-        "nodejs-websocket": "^1.7.2",
+        "body-parser": "^1.19.0",
+        "morgan": "^1.9.1",
+        "ws": "7.2.1",
         "@alias/processor-base": "../base/js"
     }
 }

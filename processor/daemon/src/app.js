@@ -1,112 +1,103 @@
 global.config = require('./config.js');
 const alias = require("@alias/processor-base");
-const ws = require('nodejs-websocket');
+const anychain = alias.anychain;
+const express = require('express');
+const WebSocket = require('ws');
+const http = require('http');
 
-class Server {
-    constructor() {
-        this.server = ws.createServer(this._onconnect.bind(this));
+const app = express();
+
+app.use(require('morgan')('tiny'));
+app.use(require('body-parser')());
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+async function handle_process(ws, d) {
+    try {
+        d = JSON.parse(d);
+    } catch(e) {
+        console.error("incorrect format");
+        ws.close();
+        return;
     }
 
-    listen(port) {
-        return this.server.listen(port);
+    try {
+        let scopes = d.scopes.map((s) => new alias.Scope(s));
+
+        var args = {
+            pushURL: d.pushURL,
+            inp: d.inp,
+            scopes: scopes,
+        };
+
+    } catch(e) {
+        console.log("bad payload");
+        ws.close();
+        return;
     }
 
-    _onconnect(conn) {
-        var self = this;
-        conn.on("text", function(d) { self._ontext(conn, d); });
-        conn.on("close", function() { self._onclose(conn); });
-    }
+    console.log("Start processing");
 
-    _onclose(conn) {
-        if (conn.processor) {
-            console.debug("processing cancelled");
-            conn.processor.terminate();
-            delete conn.processor;
-        }
-    }
+    let r = [];
+    r.push("... " + args.inp.length + " input(s):\n");
+    args.inp.forEach((inp) => r.push("... - " + inp.url + "\n"));
+    r.push("... with scopes:\n");
+    args.scopes.forEach((scope) => r.push("... - " + scope.provider + "." + scope.path + "\n"));
+    r.push("... to " + args.pushURL + "\n");
+    console.log(r.join(""));
 
-    _ontext(conn, d) {
-        conn.sendJson = function(obj) { conn.sendText(JSON.stringify(obj)); };
+    ws.startDate = new Date();
+    ws.sendJson({"init": true});
+    const cb = ws.sendJson;
+    ws.processor = new alias.Processor(cb);
+    const res = await ws.processor.process_and_exit(args);
 
-        this._handle(conn, d)
-            .catch((er) => {
-                console.error("error", er);
-                conn.sendJson({error: er});
-                console.log("failure exit");
-                conn.close(1011);
-            })
-            .then(() => {
-                console.log("exit");
-                conn.close(1000);
-            })
-        ;
-    }
+    ws.processor.terminate();
+    delete ws.processor;
 
-    async _handle(conn, d) {
-        try {
-            var d = JSON.parse(d);
-        } catch(e) {
-            console.error("incorrect format");
-            conn.close();
-            return;
-        }
+    const endDate = new Date();
+    const duration = (endDate - ws.startDate) / 1000.0;
+    console.log("Processing finished in " + duration + "s!");
 
-        try {
-            let scopes = d.scopes.map((s) => new alias.Scope(s));
-
-            var args = {
-                pushURL: d.pushURL,
-                inp: d.inp,
-                scopes: scopes,
-            };
-
-        } catch(e) {
-            console.log("bad payload");
-            conn.close();
-            return;
-        }
-
-        console.log("Start processing");
-        console.log(this._describe(args));
-
-        conn.startDate = new Date();
-        conn.sendJson({"init": true});
-        const cb = conn.sendJson;
-        conn.processor = new alias.Processor(cb);
-        const res = await conn.processor.process_and_exit(args);
-
-        conn.processor.terminate();
-        delete conn.processor;
-
-        const endDate = new Date();
-        const duration = (endDate - conn.startDate) / 1000.0;
-        console.log("Processing finished in " + duration + "s!");
-
-        if (res) {
-            conn.sendJson(res);
-        }
-    }
-
-    _describe(args) {
-        let r = [];
-
-        r.push("... " + args.inp.length + " input(s):\n");
-        args.inp.forEach((inp) => r.push("... - " + inp.url + "\n"));
-        r.push("... with scopes:\n");
-        args.scopes.forEach((scope) => r.push("... - " + scope.provider + "." + scope.path + "\n"));
-        r.push("... to " + args.pushURL + "\n");
-
-        return r.join("");
+    if (res) {
+        ws.sendJson(res);
     }
 }
 
-const anychain = alias.anychain;
+wss.on('connection', (ws) => {
+    ws.sendJson = (x) => ws.send(JSON.stringify(x));
+
+    ws.on('message', (d) => {
+        handle_process(ws, d).then(() => {
+            console.log("exit");
+            ws.close(1000);
+        }).catch((err) => {
+            console.error("error", err);
+            ws.sendJson({error: err});
+            console.log("failure exit");
+            ws.close(1011);
+        });
+    });
+
+    ws.on('close', () => {
+        if (ws.processor) {
+            console.debug("processing cancelled");
+            ws.processor.terminate();
+            delete ws.processor;
+        }
+    });
+});
+
+app.get('/alias/', (req, res) => {
+    res.send({
+        what: "alias processor server",
+    });
+});
 
 (async() => {
     await alias.init();
-
-    const listenPort = config.http.listenPort;
-    (new Server()).listen(listenPort);
-    console.log("listening on " + listenPort);
+    await server.listen(config.http.listenPort);
+    console.log(`listening on port ${server.address().port}`);
 })();
 
