@@ -116,11 +116,6 @@ class Processor {
         return new ProcessorPath(this, path);
     }
 
-    registerPath(path, desc, handler) {
-        this.handlerByPath[path] = handler;
-        this.descByPath[path] = desc;
-    }
-
     process(scope, w, p) {
         const ctx = new Context(scope, w, p);
         const re = new RegExp(scope.path);
