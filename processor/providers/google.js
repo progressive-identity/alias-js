@@ -4,7 +4,7 @@ const proc = new Processor({
 });
 
 proc.path("my_activity.assistant")
-    .desc("Google Assistant data")
+    .desc("Google Assistant requests history")
     .handler(ctx => {
         ctx.open("Takeout/My Activity/Assistant/MyActivity.json", (path, reader) => {
             if (!reader) { return; }
@@ -107,13 +107,21 @@ proc.path("my_activity.assistant")
 ;
 
 proc.path("my_activity.search")
-    .desc("Google Search data")
+    .desc("Google Search")
     .handler(ctx => {
         ctx.open("Takeout/My Activity/Search/MyActivity.json", (path, reader) => {
             if (!reader) { return; }
             ctx.write(path, ctx.filter(reader.json()));
         });
     })
+;
+
+proc.path("my_account.email")
+    .desc("Google email")
+;
+
+proc.path("my_account.connection_history")
+    .desc("Google Connection History")
 ;
 
 module.exports = proc;
