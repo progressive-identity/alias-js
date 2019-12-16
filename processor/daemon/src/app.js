@@ -95,6 +95,17 @@ app.get('/alias/', (req, res) => {
     });
 });
 
+app.get('/alias/scope/', (req, res) => {
+    if (!req.query.scopes) {
+        return res
+            .status(400)
+            .send({status: 'error', reason: `missing 'scopes' argument`});
+    }
+
+    const scopes = JSON.parse(req.query.scopes);
+    res.json(scopes.map(s => (new alias.Scope(s)).describe()));
+});
+
 (async() => {
     await alias.init();
     await server.listen(config.http.listenPort);

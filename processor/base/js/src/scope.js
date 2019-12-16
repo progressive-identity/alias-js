@@ -1,3 +1,5 @@
+const processorRouter = require('../../../providers/all.js');
+
 let predicateByOps = {
     "=":   function(e, field, val) { return e[field] === val; },
     "!=":  function(e, field, val) { return e[field] !== val; },
@@ -57,6 +59,32 @@ class Scope {
         }
 
         return this.fields.indexOf(field) != -1;
+    }
+
+    describe() {
+        const r = {
+            provider: this.provider,
+            path: this.path,
+            predicates: this.predicates,
+            fields: this.fields,
+        };
+
+        const proc = processorRouter.get(this.provider);
+        if (proc == null) {
+            return r;
+        }
+
+        r.providerDesc = proc.name;
+
+        const pathDesc = proc.descByPath[this.path];
+        if (pathDesc) {
+            r.pathDesc = pathDesc;
+        }
+
+        // XXX add predicates
+        // XXX add fields
+
+        return r;
     }
 }
 

@@ -32,11 +32,13 @@ const storage = require('./storage.js');
 const processing = require('./processing.js');
 const contracts = require('./contract.js');
 const history = require('./history.js');
+const scope = require('./scope.js');
 
 app.use("/api/user", require('./userHandlers.js'));
 app.use("/api/session", require('./sessionHandlers.js'));
 app.use("/api/contract", contracts.router);
 app.use("/api/storage", storage.router);
+app.use("/api/scope", scope.router);
 
 app.get("/api/view/index", authed, asyncMiddleware(async (req, res) => {
     const grantByID = await contracts.getGrants(req.alias.publicKey);

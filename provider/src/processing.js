@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 function process(o) {
     return new Promise((resolve, reject) => {
         const resp = {};
-        const ws = new WebSocket(config.processor[0].url);
+        const ws = new WebSocket(config.processor[0].ws_url);
 
         ws.on('open', () => {
             ws.send(JSON.stringify(o));

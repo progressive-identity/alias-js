@@ -321,12 +321,49 @@ function getGrantScopes(grant) {
     return Object.values(scopeById);
 }
 
+// Returns list of scopes mentionned in a contract
+function getContractScopes(contract) {
+    const scopeById = {};
+
+    function add(scope) {
+        const scopeId = chain.fold(scope).base64();
+        scopeById[scopeId] = scope;
+    }
+
+    // contractual base
+    if (contract.base.contractual) {
+        contract.base.contractual.scopes.forEach(add);
+    }
+
+    // consent
+    if (contract.base.consent) {
+        for (const groupIdx in contract.base.consent) {
+            for (const scopeIdx in contract.base.consent[groupIdx].scopes) {
+                add(contract.base.consent[groupIdx].scopes[scopeIdx]);
+            }
+        }
+    }
+
+
+    // legitimate
+    if (contract.base.legitimate) {
+        for (const groupIdx in contract.base.legitimate.groups) {
+            for (const scopeIdx in contract.base.legitimate.groups[groupIdx].scopes) {
+                add(contract.base.legitimate.groups[groupIdx].scopes[scopeIdx]);
+            }
+        }
+    }
+
+    return Object.values(scopeById);
+}
+
 const AliasChains = {
 //    getGrantSignatures: getGrantSignatures,
 //    signGrant: signGrant,
-    validators: validators,
-    isGrantNewer: isGrantNewer,
+    getContractScopes: getContractScopes,
     getGrantScopes: getGrantScopes,
+    isGrantNewer: isGrantNewer,
+    validators: validators,
 };
 
 (function() {

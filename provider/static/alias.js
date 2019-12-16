@@ -259,3 +259,8 @@ function setUserMeta(d) {
 function getUserMeta() {
     return $.ajax('/api/session/meta');
 }
+
+function describeScopes(scopes) {
+    const url = "/api/scope/describe/?scopes=" + encodeURIComponent(JSON.stringify(scopes));
+    return $.getJSON(url);
+}

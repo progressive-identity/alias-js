@@ -17,6 +17,16 @@
                 font-family: 'Roboto', sans-serif;
             }
 
+            .titled {
+                text-decoration:underline dashed;
+                text-decoration-color: gray;
+            }
+
+            .titled:hover {
+                text-decoration-color: black;
+                cursor: help;
+            }
+
         </style>
     </head>
 
@@ -55,7 +65,7 @@
                 <div v-if="hasContractContractualBase(o.body.contract)">
                     <h4>Contractual base</h4>
 
-                    <grant-usages-scopes :value="o.body.contract.base.contractual"></grant-usages-scopes>
+                    <grant-usages-scopes :value="o.body.contract.base.contractual" :descmap="scopeDescByIds"></grant-usages-scopes>
                 </div>
 
                 <div v-if="hasContractConsentBase(o.body.contract)">
@@ -63,7 +73,7 @@
 
                     <div v-for="(consent, idx) in o.body.contract.base.consent">
                         <h5>Part {{idx+1}}</h5>
-                        <grant-usages-scopes :value="consent"></group-usages-scopes>
+                        <grant-usages-scopes :value="consent" :descmap="scopeDescByIds"></group-usages-scopes>
                     </div>
                 </div>
 
@@ -73,7 +83,7 @@
 
                     <div v-for="(legitimate, idx) in o.body.contract.base.legitimate.groups">
                         <h5>Part {{idx+1}}</h5>
-                        <grant-usages-scopes :value="legitimate"></group-usages-scopes>
+                        <grant-usages-scopes :value="legitimate" :descmap="scopeDescByIds"></group-usages-scopes>
                     </div>
                 </div>
 

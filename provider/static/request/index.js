@@ -70,6 +70,15 @@ async function run() {
         return;
     };
 
+    // request description for each scopes mentionned in the contract
+    const scopes = AliasChains.getContractScopes(contract);
+    const scopeDescs = await describeScopes(scopes);
+    const scopeId = scopes.map(s => chain.fold(s).base64());
+    const scopeDescByIds = {};
+    for (const i in scopes) {
+        scopeDescByIds[chain.fold(scopes[i]).base64()] = scopeDescs[i];
+    }
+
     const hasContractual = contract.base.contractual && contract.base.contractual.scopes.length != 0 && contract.base.contractual.usages.length != 0;
     const hasConsent = contract.base.consent && contract.base.consent.length != 0;
     const hasLegitimate = contract.base.legitimate && contract.base.legitimate.groups.length != 0;
@@ -88,6 +97,7 @@ async function run() {
             hasConsent: hasConsent,
             hasContractual: hasContractual,
             hasLegitimate: hasLegitimate,
+            scopeDescByIds: scopeDescByIds,
             showAdvanced: false,
         },
         methods: {

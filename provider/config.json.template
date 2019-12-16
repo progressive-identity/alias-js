@@ -14,7 +14,8 @@
 
     "processor": [
         {
-            "url": "ws://processor.authz.gdpr.dev.local/"
+            "ws_url": "ws://processor.authz.gdpr.dev.local/",
+            "http_url": "http://processor.authz.gdpr.dev.local/"
         }
     ],
 
