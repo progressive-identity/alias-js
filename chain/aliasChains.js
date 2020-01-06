@@ -8,166 +8,6 @@ function assertHasFields(/*o, fieldA, [fieldB, [...]]*/) {
     }
 }
 
-/*function getGrantSignatures(o) {
-    if (o.type != "alias.multigrant") {
-        throw "not an 'alias.multigrant'";
-    }
-
-    let r = [];
-
-    const contractFold = chain.fold(o.contract);
-    if ('consent' in o.contract.base) {
-        assertHasFields(o.signatures, "consent");
-
-        for (const idx in o.contract.base.consent) {
-            const signature = o.signatures.consent[idx];
-
-            if (signature === undefined) {
-                throw "signature for consent undefined";
-            }
-
-            if (signature === null) {
-                continue;
-            }
-
-            r.push({
-                base: o.contract.base.consent[idx],
-                signature: {
-                    type: 'alias.signature',
-                    signer: o.signer,
-                    date: o.date,
-                    body: {
-                        contract: contractFold,
-                        base: 'consent',
-                        idx: idx,
-                    },
-                    signature: signature,
-                },
-            });
-        }
-    }
-
-    if ('contractual' in o.contract.base) {
-        assertHasFields(o.signatures, "contractual");
-
-        const signature = o.signatures.contractual;
-        if (signature === undefined) {
-            throw "signature for contractual undefined";
-        }
-
-        if (signature === null) {
-            continue;
-        }
-
-        r.push({
-            base: o.contract.base.contractual,
-            signature: {
-                type: 'alias.signature',
-                signer: o.signer,
-                date: o.date,
-                body: {
-                    contract: contractFold,
-                    base: 'contractual',
-                },
-                signature: signature,
-            },
-        });
-    }
-
-    if ('legitimate' in o.contract.base) {
-        assertHasFields(o.signatures, "legitimate");
-        for (const idx in o.contract.base.legitimate.groups) {
-            const signature = o.signatures.legitimate[idx];
-            if (signature === undefined) {
-                throw "signature for legitimate undefined";
-            }
-
-            if (signature === null) {
-                continue;
-            }
-
-            r.push({
-                base: o.contract.base.legitimate.groups[idx],
-                signature: {
-                    type: 'alias.signature',
-                    signer: o.signer,
-                    date: o.date,
-                    body: {
-                        contract: contractFold,
-                        base: 'legitimate',
-                        idx: idx,
-                    },
-                    signature: signature,
-                },
-            });
-        }
-    }
-
-    return r;
-}
-
-function signGrant(chain, sk, contract, consentBools) {
-    const date = new Date();
-
-    const grant = {
-        type: 'alias.multigrant',
-        signatures: {},
-        signer: sk.publicKey,
-        date: date,
-    };
-
-    const contractFold = chain.fold(contract);
-    if ('consent' in contract.base) {
-        grant.signatures.consent = [];
-        for (const idx in contract.base.consent) {
-            let signature = null;
-
-            if (consentBools[idx]) {
-                const body = {
-                    contract: contractFold,
-                    base: 'consent',
-                    idx: idx,
-                };
-
-                {signature} = chain.sign(sk, body, date);
-            }
-
-            grant.signatures.consent.push(signature);
-        }
-    }
-
-    if ('contractual' in contract.base) {
-        const body = {
-            contract: contractFold,
-            base: 'contractual',
-        };
-
-        const {signature} = chain.sign(sk, body, date);
-
-        grant.signatures.contractual = signature;
-    }
-
-    if ('legitimate' in contract.base) {
-        grant.signatures.legitimate = [];
-        for (const idx in contract.base.legitimate.groups) {
-            const body = {
-                contract: contractFold,
-                base: 'legitimate',
-                idx: idx,
-            };
-
-            const {signature} = chain.sign(sk, body, date);
-
-            grant.signatures.legitimate.push(signature);
-        }
-    }
-
-    // XXX for debug
-    chain.verify(grant);
-
-    return grant;
-}*/
-
 const validators = {
     // Binds the signer of this document to the authorization server defined in
     // this document.
@@ -248,23 +88,6 @@ const validators = {
             }
         }
     },
-/*
-    "alias.multigrant": (chain, o) => {
-        assertHasFields(o, "contract", "signatures", "signer", "date");
-
-        if (o.contract.type != "alias.contract") {
-            throw "field 'contract' is not an alias.contract";
-        }
-
-        // Verify all signatures included in the grant
-        for (const {signature} of getGrantSignatures(o)) {
-            if (signature.type != "anychain.signature") {
-                throw "assertion error: signatures from the grant are not anychain signatures";
-            }
-
-            chain.verify(signature);
-        }
-    },*/
 };
 
 // For a same contract, returns true if newGrant is newer than oldGrant.
@@ -358,8 +181,6 @@ function getContractScopes(contract) {
 }
 
 const AliasChains = {
-//    getGrantSignatures: getGrantSignatures,
-//    signGrant: signGrant,
     getContractScopes: getContractScopes,
     getGrantScopes: getGrantScopes,
     isGrantNewer: isGrantNewer,
