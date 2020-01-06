@@ -180,7 +180,27 @@ function getContractScopes(contract) {
     return Object.values(scopeById);
 }
 
+const describers = {
+    "alias.bindAuthz": (chain, o) => {
+        return `user is bound to authorization server ${o.origin}`;
+    },
+    "alias.grant": (chain, o) => {
+        if (o.revoked) {
+            return `contract revocation`;
+        } else {
+            return `contract signature`;
+        }
+    },
+};
+
+// Returns a description of what an order is about
+function describeOrder(chain, order) {
+    const describer = describers[order.type];
+    return describer === undefined ? null : describer(chain, order);
+}
+
 const AliasChains = {
+    describeOrder: describeOrder,
     getContractScopes: getContractScopes,
     getGrantScopes: getGrantScopes,
     isGrantNewer: isGrantNewer,

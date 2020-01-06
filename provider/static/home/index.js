@@ -85,7 +85,15 @@ async function run() {
         vue.clients = r.clients;
         vue.view = r.view;
         r.history.push(chain.toJSON(idty.bind));    // XXX
-        vue.history = r.history.map((v) => chain.fromJSON(v));
+        vue.history = r.history
+            .map((o) => chain.fromJSON(o))
+            .map((o) => {
+                return {
+                    order: o,
+                    desc: AliasChains.describeOrder(chain, o.body)
+                };
+            })
+        ;
     }).catch((e) => {
         if (e.status == 401) {
             window.location.href = "/login";

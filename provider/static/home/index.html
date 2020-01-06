@@ -124,8 +124,8 @@
         style="width: 100%; border: 1px solid white; margin: 10px 0 20px 0;  border-radius: 3px; padding: 25px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); background: white;"
       >
         <h2>History</h2>
-        <pre><span v-for="o in history">{{o['date']}}: <b><code>{{o.body.type}}</code></b> <a :href="'/order/?code=' + orderToken(o)"><code>{{orderID(o)}}</code></a>
-        </span></pre>
+        <pre><span v-for="h in history">{{h.order['date']}}: <a :href="'/order/?code=' + orderToken(h.order)"><span v-if="h.desc">{{h.desc}} (</span>{{orderID(h.order).substring(1, 16)}}: <b>{{h.order.body.type}}</b><span v-if="h.desc">)</span></a>
+</span></pre>
       </div>
       <button
         class="hover-btn"
