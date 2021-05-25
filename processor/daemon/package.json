@@ -4,9 +4,9 @@
         "start": "node app.js"
     },
     "dependencies": {
+        "@alias/processor-base": "../base/js",
         "body-parser": "^1.19.0",
         "morgan": "^1.9.1",
-        "ws": "7.2.1",
-        "@alias/processor-base": "../base/js"
+        "ws": "7.2.1"
     }
 }
