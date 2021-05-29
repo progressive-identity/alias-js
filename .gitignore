@@ -5,3 +5,4 @@ js/node_modules
 js/package-lock.json
 js/build
 data
+node_modules
