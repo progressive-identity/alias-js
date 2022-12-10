@@ -5,7 +5,7 @@
         "@alias/anychain": "../deps/anychain-js",
         "body-parser": "^1.19.0",
         "cors": "^2.8.5",
-        "express": "^4.17.1",
+        "express": "^4.17.3",
         "express-promise-router": "^3.0.3",
         "libsodium-wrappers": "^0.7.5",
         "morgan": "^1.9.1",
