@@ -6,7 +6,7 @@
     "dependencies": {
         "@alias/processor-base": "../base/js",
         "body-parser": "^1.19.0",
-        "express": "^4.17.1",
+        "express": "^4.17.3",
         "morgan": "^1.9.1",
         "ws": "7.2.1"
     }
